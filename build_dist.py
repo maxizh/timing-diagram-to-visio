@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-build_dist.py — 从**源**重建分发包（dist/wavejson-skill/）+ 两个 zip。
+build_dist.py — 从**源**重建分发包（dist/wave2visio-skill/）+ 两个 zip。
 
 为什么要有这个（2026-11-02）：
-  以前 dist/wavejson-skill/wave2visio/ 是源的一份**手工拷贝**，每次改完要手动
+  以前 dist/wave2visio-skill/wave2visio/ 是源的一份**手工拷贝**，每次改完要手动
   rsync/cp 六七个地方 —— 已经因此出过两次事故：
     · 10-22 那晚把「修复前」的版本同步到了源和 dist，修复直接丢失
     · 11-02 改名时漏同步，自检基线跟着旧版走，「112 项全过」是假象
@@ -15,7 +15,7 @@ build_dist.py — 从**源**重建分发包（dist/wavejson-skill/）+ 两个 zi
     python3 build_dist.py --check    # 只校验（不写），用于 CI / 自检
 
 一致性校验（每次都做）：
-  · dist/wavejson-skill/wave2visio/ 与源逐字节一致
+  · dist/wave2visio-skill/wave2visio/ 与源逐字节一致
   · 两个 zip 的内容与目录一致
   · install.sh 里引用的技能名与源目录名一致
 
@@ -31,8 +31,10 @@ import zipfile
 
 ROOT = pathlib.Path(__file__).resolve().parent
 SRC = ROOT / ".workbuddy" / "skills" / "wave2visio"
-DIST = ROOT / "dist" / "wavejson-skill"
-SKILL_NAME = SRC.name                      # wave2visio
+SKILL_NAME = SRC.name                      # wave2visio（= 目录名 = frontmatter name）
+# 分发包名 = 技能名 + "-skill"（wave2visio-skill）。跟随技能名，改名不用手改。
+PKG_NAME = f"{SKILL_NAME}-skill"
+DIST = ROOT / "dist" / PKG_NAME
 IGNORE = shutil.ignore_patterns(".DS_Store", "__pycache__", "*.bak-*", "*.removed-*",
                                  "*.pyc", "memory")
 
@@ -77,8 +79,8 @@ def build(check_only=False):
                       file=sys.stderr)
                 return 1
             s = re.sub(r'SKILL_NAME="[^"]+"', f'SKILL_NAME="{SKILL_NAME}"', s)
-            s = s.replace("wavejson-skill/raw/main", f"{SKILL_NAME}-skill/raw/main")
-            s = s.replace("<user>/wavejson-skill", f"<user>/{SKILL_NAME}-skill")
+            # install.sh 里凡是提到分发包名的地方都要跟着改（curl 示例 URL、clone 示例）
+            s = re.sub(r'\b(wavejson|wave2visio)-skill\b', PKG_NAME, s)
             inst.write_text(s, encoding="utf-8")
             log(f"✓ install.sh 的 SKILL_NAME → {SKILL_NAME}")
 
@@ -108,14 +110,14 @@ def build(check_only=False):
 
     # ---- 4. 打包 zip ----
     # ⚠️ 两个坑（都实测踩过）：
-    #   ① base 不能是 dist/ 本身 —— 那个目录里有 dist/wavejson-skill.zip，
+    #   ① base 不能是 dist/ 本身 —— 那个目录里有 dist/wave2visio-skill.zip，
     #      正在被写，rglob 会扫到它 → 边写边扫，死循环卡死（SIGTERM）。
-    #      所以 base 必须是 dist/wavejson-skill/（子目录）。
+    #      所以 base 必须是 dist/wave2visio-skill/（子目录）。
     #   ② 第二个 zip 的 base 是 .workbuddy/skills/，不能 rglob 整个目录树 ——
     #      那里有一堆 wavejson.bak-* 历史备份，全扫进去又慢又脏。
     #      只打包**目标技能目录**这一个子目录。
-    zips = [(ROOT / "dist" / "wavejson-skill.zip", DIST, "wavejson-skill", None),
-            (ROOT / ".workbuddy" / "skills" / "wavejson-skill.zip",
+    zips = [(ROOT / "dist" / f"{PKG_NAME}.zip", DIST, PKG_NAME, None),
+            (ROOT / ".workbuddy" / "skills" / f"{PKG_NAME}.zip",
              ROOT / ".workbuddy" / "skills", SKILL_NAME, SRC)]
     for zp, base, arc, only in zips:
         if check_only:
@@ -125,7 +127,7 @@ def build(check_only=False):
             zp.unlink()
         with zipfile.ZipFile(zp, "w", zipfile.ZIP_DEFLATED) as z:
             if only is None:
-                # 整个 dist/wavejson-skill/ 目录
+                # 整个 dist/wave2visio-skill/ 目录
                 for f in sorted(base.rglob("*")):
                     if f.is_file() and not any(x in str(f) for x in
                                                (".DS_Store", "__pycache__", ".bak-", ".removed-")):

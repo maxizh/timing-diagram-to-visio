@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-selftest.py — wavejson skill 一键自检（纯标准库，秒级，不联网）
+selftest.py — wave2visio skill 一键自检（纯标准库，秒级，不联网）
 
 核心思路：**不靠肉眼**。
 把渲染出来的 SVG **反解回「每字符电平」**，再和预期逐 bit 对照。
@@ -412,7 +412,7 @@ color:var(--muted);font-size:12.5px}}
 与输出 SVG 的布局比例不同，所以并排时线不会逐像素重合。两边各自与自己的位网格对齐。
 </div>
 
-<footer>wavejson skill · scripts/selftest.py · 报告为单文件自包含，可直接转发</footer>
+<footer>wave2visio skill · scripts/selftest.py · 报告为单文件自包含，可直接转发</footer>
 </div></body></html>"""
 
 
@@ -598,7 +598,7 @@ def main():
 
     r = Report(a.verbose)
     if not a.quiet:
-        print("wavejson skill 自检\n" + "─" * 46)
+        print("wave2visio skill 自检\n" + "─" * 46)
 
     # ---- 1. 参考波形逐 bit 回读 -------------------------------------------
     if not a.quiet:
@@ -1376,11 +1376,15 @@ def main():
     # 这类漂移肉眼发现不了 —— 分发包看起来是好的，装到别人机器上才炸。
     # 所以在这里做机器化比对：dist 若存在，其 SKILL.md / references 必须与源一致。
     if not a.quiet:
-        print("\n[12] 分发包与开发源一致（dist/wavejson-skill/）")
-    # ROOT = <项目>/.workbuddy/skills/wavejson → 项目根要上溯 3 层：
-    # wavejson → skills → .workbuddy → <项目>
+        print("\n[12] 分发包与开发源一致（dist/wave2visio-skill/）")
+    # ROOT = <项目>/.workbuddy/skills/wave2visio → 项目根要上溯 3 层：
+    # wave2visio → skills → .workbuddy → <项目>
     proj_root = os.path.dirname(os.path.dirname(os.path.dirname(ROOT)))
-    dist_root = os.path.join(proj_root, "dist", "wavejson-skill", "wavejson")
+    # ⚠️ 路径三段都要跟着改名走（2026-11-02 修）：
+    #   原来是 dist/wavejson-skill/wavejson —— 技能改名 wavejson→wave2visio 时
+    #   这里**漏改了**，导致 [12] 组一直在检一个不存在的路径 → 守护形同虚设
+    #   （自检会打印「跳过」而不是失败，正好符合「跳过项不能报 ✓」的反面教材）。
+    dist_root = os.path.join(proj_root, "dist", "wave2visio-skill", "wave2visio")
     if not os.path.isdir(dist_root):
         # 纯安装态（本机~/.workbuddy/skills/ 下）没有 dist/，本组不适用。
         # 如实说明「未检查」，不能报✓ —— 那会让没跑过比对的项混进"全过"。

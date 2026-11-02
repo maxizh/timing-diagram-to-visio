@@ -34,7 +34,7 @@ wavedrom.com 在线编辑器打开，工具链不封闭在本项目里。
 ```
 2026-09-14-11-10-22/          ← **本仓库根 = 项目源目录**（不是副本）
 ├── .workbuddy/skills/wave2visio/    技能本体（唯一真相源）
-├── dist/wavejson-skill/             分发包（**构建产物**，由 build_dist.py 生成）
+├── dist/wave2visio-skill/           分发包（**构建产物**，由 build_dist.py 生成）
 │   ├── wave2visio/                  技能本体镜像 + install.sh + README
 ├── build_dist.py                    从源一键重建 dist + zip，并做逐字节校验
 ├── test-cases/                      测试语料（厂商原图/PDF 不入库）
@@ -69,28 +69,34 @@ wavedrom.com 在线编辑器打开，工具链不封闭在本项目里。
 ## 目录结构
 
 ```
-skill/                   # 技能本体（= 可安装的 wavejson skill）
-├── SKILL.md             # 最小可用技能定义：适用范围/输入/features/输出/调用示例
-├── skill_dir.sh         # 打印本机实际安装目录（三宿主通用，别写死路径）
-├── scripts/             # 渲染器、PDF/PNG 解析器、自检、构建脚本
-├── references/          # full-guide / examples / vision-prompt / deep-dive-notes
-├── templates/           # HTML 模板（build_web.py 的源）
-└── assets/              # 预览器、基准图等生成物
-
-dist/wavejson-skill/     # 可整目录推 GitHub 的分发仓库
-├── wavejson/            # 与 skill/ 同源
-├── install.sh           # 三宿主安装脚本
-└── README.md
-dist/wavejson-skill.zip  # 分发包
-
-docs/                    # 需求规格与交接文档
-test-cases/              # 测试语料与实测报告
+2026-09-14-11-10-22/          ← **仓库根 = 项目源目录**（不是副本）
+├── .workbuddy/skills/wave2visio/    技能本体（唯一真相源）
+│   ├── SKILL.md             # 最小可用技能定义：适用范围/输入/features/输出/调用示例
+│   ├── skill_dir.sh         # 打印本机实际安装目录（三宿主通用，别写死路径）
+│   ├── scripts/             # 渲染器、PDF/PNG 解析器、自检、构建脚本
+│   ├── references/          # full-guide / examples / vision-prompt / deep-dive-notes
+│   ├── templates/           # HTML 模板（build_web.py 的源）
+│   └── assets/              # 预览器、基准图等生成物
+│
+├── dist/wave2visio-skill/           分发包（**构建产物**，由 build_dist.py 生成）
+│   ├── wave2visio/         # 与源同源
+│   ├── install.sh          # 三宿主安装脚本
+│   └── README.md
+├── dist/wave2visio-skill.zip        # 分发包
+│
+├── build_dist.py            # 从源一键重建 dist + zip，并做逐字节校验
+├── docs/                    # 需求规格与交接文档
+└── test-cases/              # 测试语料与实测报告
 ```
+
+⚠️ **源是唯一真相**：`dist/` 是 `python3 build_dist.py` 的输出，不要手改。
+改完技能本体后跑一次它，dist 与两个 zip 自动重建并校验一致性
+（`python3 build_dist.py --check` 只校验不写，供 CI 用）。
 
 ## 安装
 
 ```bash
-cd dist/wavejson-skill
+cd dist/wave2visio-skill
 bash install.sh                # 装到 WorkBuddy / Claude Code / Codex CLI 全部三宿主
 bash install.sh claude         # 只装 Claude Code
 bash install.sh --list         # 查看各宿主安装路径
@@ -99,15 +105,15 @@ bash install.sh --uninstall    # 卸载（旧副本保留为 .bak）
 
 | 宿主 | 安装路径 | 触发方式 |
 |---|---|---|
-| WorkBuddy | `~/.workbuddy/skills/wavejson/` | 自然语言自动命中，或 `@skill:wavejson` |
-| Claude Code | `~/.claude/skills/wavejson/` | 自动匹配，或 `/wavejson` |
-| Codex CLI | `~/.codex/skills/wavejson/` | 自动匹配，或 `$wavejson` |
+| WorkBuddy | `~/.workbuddy/skills/wave2visio/` | 自然语言自动命中，或 `@skill:wave2visio` |
+| Claude Code | `~/.claude/skills/wave2visio/` | 自动匹配，或 `/wave2visio` |
+| Codex CLI | `~/.codex/skills/wave2visio/` | 自动匹配，或 `$wave2visio` |
 
 ## 验证安装
 
 ```bash
-cd ~/.workbuddy/skills/wavejson    # 或对应宿主的路径
-python3 scripts/selftest.py        # 退出码 0 = 通过
+cd ~/.workbuddy/skills/wave2visio    # 或对应宿主的路径
+python3 scripts/selftest.py           # 退出码 0 = 通过
 ```
 
 ## 依赖

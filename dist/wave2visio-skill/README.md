@@ -1,4 +1,4 @@
-# wavejson-skill
+# wave2visio-skill
 
 芯片时序图工具技能包 —— 自然语言 / datasheet 截图 / PDF → WaveJSON → 可进 Visio 编辑的直角方波 SVG；反向可把 datasheet 时序图**零大模型**读回可编辑波形。
 
@@ -35,7 +35,7 @@
 ### 方式一：install.sh（推荐）
 
 ```bash
-git clone <this-repo> && cd wavejson-skill
+git clone <this-repo> && cd wave2visio-skill
 bash install.sh                 # 装到本机全部三个宿主
 bash install.sh claude          # 只装 Claude Code
 bash install.sh --list          # 查看各宿主安装路径
@@ -51,7 +51,7 @@ curl -fsSL <repo>/raw/main/install.sh | bash -s -- --repo <repo>
 ### 方式二：skills CLI
 
 ```bash
-npx skills add <owner>/wavejson-skill/wavejson --agent claude   # 或 --agent codex
+npx skills add <owner>/wave2visio-skill/wave2visio --agent claude   # 或 --agent codex
 ```
 
 ### 方式三：手动复制
