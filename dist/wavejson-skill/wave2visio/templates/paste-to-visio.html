@@ -1,0 +1,649 @@
+<!-- 模板文件 — 不要直接使用。
+     改完请运行： python3 scripts/build_web.py
+     生成物： assets/paste-to-visio.html -->
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="vnHP2QXt5TLNjAYEbSAv8L">
+<head data-page-node-id="VvBaGijeNNl3EZFN2ICfqV">
+<meta charset="UTF-8" data-page-node-id="gUihN7RbLwGnFCRWr6ukOb">
+<title>WaveJSON Paste-to-Visio</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 24px;
+    background: #0f1419;
+    color: #e6e9ef;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+    line-height: 1.6;
+  }
+  .container { max-width: 1100px; margin: 0 auto; }
+  h1 { font-size: 22px; color: #d4a574; margin-bottom: 4px; }
+  .sub { color: #8a91a3; font-size: 13px; margin-bottom: 20px; }
+
+  .panel {
+    background: #1a1f29;
+    border: 1px solid #2d3548;
+    border-radius: 6px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .panel-title {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: #d4a574;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  /* Drop zone */
+  .dropzone {
+    border: 2px dashed #2d3548;
+    border-radius: 6px;
+    padding: 36px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #0f1419;
+  }
+  .dropzone:hover { border-color: #d4a574; background: rgba(212,165,116,0.04); }
+  .dropzone.dragover { border-color: #d4a574; background: rgba(212,165,116,0.08); }
+  .dropzone.has-image { padding: 12px; }
+  .dropzone img { max-width: 100%; max-height: 280px; border-radius: 4px; }
+
+  /* Controls */
+  .row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 10px; }
+  label { font-size: 12px; color: #8a91a3; margin-bottom: 4px; display: block; }
+  select, input[type=text], input[type=password] {
+    width: 100%;
+    background: #0f1419;
+    border: 1px solid #2d3548;
+    color: #e6e9ef;
+    padding: 8px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: inherit;
+  }
+  input[type=password] { font-family: monospace; }
+  select optgroup { background: #1a1f29; color: #8a91a3; font-size: 12px; }
+  select option { background: #0f1419; color: #e6e9ef; }
+
+  button {
+    background: #d4a574;
+    color: #0f1419;
+    border: 0;
+    padding: 9px 16px;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-right: 8px;
+    margin-top: 6px;
+    font-size: 13px;
+  }
+  button:hover { background: #c9a86a; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  button.secondary { background: transparent; color: #d4a574; border: 1px solid #d4a574; }
+
+  /* Render area */
+  .render {
+    background: #fafafa;
+    border: 1px solid #2d3548;
+    border-radius: 4px;
+    padding: 24px;
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-x: auto;
+  }
+  .render .empty { color: #8a91a3; }
+
+  /* Status / log */
+  .log {
+    background: #0f1419;
+    border: 1px solid #2d3548;
+    border-radius: 4px;
+    padding: 10px 12px;
+    font-family: "SF Mono", Menlo, monospace;
+    font-size: 12px;
+    color: #6fb98f;
+    max-height: 120px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+  }
+  .log.error { color: #c97070; }
+
+  /* JSON editor */
+  textarea {
+    width: 100%;
+    min-height: 240px;
+    background: #0f1419;
+    border: 1px solid #2d3548;
+    color: #e6e9ef;
+    border-radius: 4px;
+    padding: 10px;
+    font-family: "SF Mono", Menlo, monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    resize: vertical;
+  }
+
+  .hint { color: #8a91a3; font-size: 12px; }
+  .pill {
+    display: inline-block;
+    background: rgba(212,165,116,0.15);
+    color: #d4a574;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    margin-right: 6px;
+  }
+</style>
+</head>
+<body data-page-node-id="ESjzm9RkPZP9ALonsoTmKg">
+<div class="container" data-page-node-id="979v1XMonf8cZsLLxZhlwQ">
+
+<h1 data-page-node-id="WwtM2kGqkBG5NezCm0uvFx">📋 WaveJSON Paste-to-Visio</h1>
+<div class="sub" data-page-node-id="IJiBOnX7J6w300CncD11rQ">规则化波形图（截图 / 拍照 / PDF 截屏）→ AI 识别 → WaveJSON → 渲染 → 导出 Visio</div>
+
+<!-- 1. 粘贴图片区 -->
+<div class="panel" data-page-node-id="LUzlh9RGJ8vi1mEP5xuLDG">
+  <div class="panel-title" data-page-node-id="3qmlf0Pp7mmrECQGNMgZ8K">① 粘贴或拖拽波形图</div>
+  <div class="dropzone" id="dropzone" data-page-node-id="VLvQfER0E7wBRM37FPZICb">
+    <div id="dropzone-text" data-page-node-id="GFBzHtdSfUtiBfaVV8Tp0D">
+      <div style="font-size: 32px; margin-bottom: 8px;" data-page-node-id="7aRTkrSOXFPsNZ8UFuO07c">📋</div>
+      <div style="font-size: 14px; color: #e6e9ef;" data-page-node-id="4uqOggMWlyTksaqLAOe6Df">点击选择文件 / 拖拽图片到此处 / <kbd style="background:#2d3548;padding:2px 6px;border-radius:3px;font-size:11px;" data-page-node-id="qzXNCOAksE20eLYWE1ttmu">Ctrl/⌘+V</kbd> 直接粘贴</div>
+      <div class="hint" data-page-node-id="PIzDd3FwsMaSLu3PiNsdZH">支持 PNG / JPG / WebP / SVG · 波形图、状态机、时序图等规则化图形</div>
+    </div>
+    <input type="file" id="file-input" accept="image/*" style="display:none" data-page-node-id="DUo5Q3JV4wB0G0mFA6ejZH">
+  </div>
+</div>
+
+<!-- 2. AI 配置 -->
+<div class="panel" data-page-node-id="bDTcTyVDfaGVEdI5pf6vb1">
+  <div class="panel-title" data-page-node-id="6zAsJfXrPqqlpdiB6qaR36">② AI 视觉识别</div>
+  <div class="row" data-page-node-id="MBJiciHv5OWTEKew3CWSuv">
+    <div data-page-node-id="ALiDnBGuHjzluwlb8V4KCL">
+      <label data-page-node-id="0GQIiyhdh0P5ehDFqHNVbC">模型服务</label>
+      <select id="model-select" data-page-node-id="oXRLigDPyNx3ARlRJYP4jh">
+        <optgroup label="国内 · 可直连（推荐）">
+          <option value="qwen">通义千问 qwen-vl-max ★</option>
+          <option value="qwen-flash">通义千问 qwen3-vl-flash（更便宜）</option>
+          <option value="zhipu">智谱 GLM-4.6V</option>
+          <option value="zhipu-flash">智谱 GLM-4.6V-Flash（有免费额度）</option>
+          <option value="siliconflow">硅基流动 SiliconFlow</option>
+          <option value="stepfun">阶跃星辰 Step</option>
+          <option value="doubao">火山方舟 · 豆包视觉</option>
+        </optgroup>
+        <optgroup label="海外">
+          <option value="openai">OpenAI GPT-4o vision</option>
+          <option value="anthropic">Anthropic Claude Sonnet 4.5</option>
+          <option value="gemini">Google Gemini 2.5 Pro</option>
+        </optgroup>
+        <optgroup label="其它">
+          <option value="custom">自定义（任何 OpenAI 兼容服务）</option>
+        </optgroup>
+      </select>
+    </div>
+    <div data-page-node-id="y58FLVS1oWRVHETRaRQZic">
+      <label data-page-node-id="9ncyGZbMn7AwJnLwiU3qzp">API Key</label>
+      <input type="password" id="api-key" placeholder="sk-..." data-page-node-id="9ncyGZbMn7AwJnLwiU3qzp">
+    </div>
+    <div data-page-node-id="Ui2T6TTmFBYiOPxuddLjVA">
+      <label data-page-node-id="7km549cDy9L3tDoLKC4wNJ">模型 ID（切换服务会自动填）</label>
+      <input type="text" id="model-id" placeholder="qwen-vl-max" data-page-node-id="NiAremSEKTiBwiBq0ZAXAD">
+    </div>
+  </div>
+  <div class="row" style="grid-template-columns: 1fr;" data-page-node-id="MBJiciHv5OWTEKew3CWSux">
+    <div data-page-node-id="Ui2T6TTmFBYiOPxuddLjVB">
+      <label data-page-node-id="7km549cDy9L3tDoLKC4wNK">API Base URL（切换服务会自动填）</label>
+      <input type="text" id="api-base" placeholder="https://dashscope.aliyuncs.com/compatible-mode/v1" data-page-node-id="NiAremSEKTiBwiBq0ZAXAE">
+    </div>
+  </div>
+  <div class="hint" id="provider-hint" style="margin-bottom:10px;"></div>
+  <div class="hint" data-page-node-id="ZxBx8LEGgvY9v5tnBHiL8X">
+    <span class="pill" data-page-node-id="vEipi4f2oMQpYNyQCHLemf">隐私</span>
+    所有调用在本地浏览器发起，API Key 只存在浏览器内存里，不上传任何服务器。
+    <span class="pill" data-page-node-id="ofou2o1uiJcBrzhPEcbCTf">国内直连</span>
+    通义 / 智谱 / 硅基流动 / 火山方舟 / 阶跃 都是 OpenAI 兼容接口，国内可直连。
+    <br>
+    <span class="pill">不想填 Key？</span>
+    直接在宿主 AI（WorkBuddy / Claude Code / Codex 等）对话里把图粘给它，走 skill 路径，零配置。
+  </div>
+</div>
+
+<!-- 3. 触发按钮 -->
+<div class="panel" data-page-node-id="nVJ4pCAsSDwAaH2K9kIJqN">
+  <div class="panel-title" data-page-node-id="ElKURqhrQAsCWPW7wlhqrG">③ 一键识别 + 修复</div>
+  <button id="btn-recognize" disabled data-page-node-id="HDcdzn5lila9KDAG4nesEh">🔍 AI 识别并生成 WaveJSON</button>
+  <button class="secondary" id="btn-bypass" onclick="location.href='viewer.html'" data-page-node-id="1v9HBo75pJ5egzU4PHznXq">→ 已经有 WaveJSON？直接用 viewer</button>
+  <div class="log" id="log" style="margin-top: 10px;" data-page-node-id="wJLzwxXMJ2R2wHBjfWGtsc"></div>
+</div>
+
+<!-- 4. 渲染 + 编辑 + 导出 -->
+<div class="panel" data-page-node-id="8YhcCxXin3mi4KugfcYDL7">
+  <div class="panel-title" data-page-node-id="iYFAXkJfjCI5nHIvC1Ejn6">④ 渲染结果 · 直角方波（可手动编辑 JSON）</div>
+  <div class="render" id="render-area" data-page-node-id="zLKXx1L2oojZcHJSyFKHEv">
+    <span class="empty" data-page-node-id="kFguHpZ8ykbnjhzrzb8Adl">先粘贴图片并识别</span>
+  </div>
+  <br data-page-node-id="RiXZaBIocJmuGycFQ7NB9E">
+  <textarea id="json-editor" placeholder="生成的 WaveJSON 在这里，你可以手动修改"></textarea>
+  <div class="row" data-page-node-id="2GXp2g7eGoVFml7TZLuGeV">
+    <div data-page-node-id="F8qznFnC9NTvBTdBCI5w4x">
+      <button onclick="render()" data-page-node-id="AXBkHeQtnsGCyFBWgDfSFR">重新渲染</button>
+      <button class="secondary" onclick="postProcessJson()" data-page-node-id="xmeISjuVN9vGDMGmguHgvK">⟲ 后处理（自动 fix 字段长度）</button>
+    </div>
+  </div>
+</div>
+
+<!-- 5. 导出 -->
+<div class="panel" data-page-node-id="ismhsovfY4EvAXdNW5CetZ">
+  <div class="panel-title" data-page-node-id="viVlVdjRHGQAAv4BTtM6nn">⑤ 导出</div>
+  <button class="secondary" onclick="downloadSvg()" data-page-node-id="a9KKGnFlunwcPdiv4EB6tD">下载 .svg</button>
+  <button class="secondary" onclick="downloadJson()" data-page-node-id="pFZJtMCbyQP6DFszxV9ZlS">下载 .json</button>
+  <button onclick="downloadForVisio()" data-page-node-id="194IMjZwCG9Soeg0FDNpsR">📥 下载 Visio 友好 SVG</button>
+  <button class="secondary" onclick="downloadPng()" data-page-node-id="OQRUz50iYBG0WVLlqWmaEh">下载 .png（位图）</button>
+  <div class="hint" style="margin-top: 10px;" data-page-node-id="6kdPLsoBiETBjNUuoa8em5">
+    💡 <b data-page-node-id="50melNUtCVznJERCGUatn5">Visio 导入说明</b>：输出的 SVG 是纯 path/text 矢量、白底黑线、直角电平跳变。Visio 2024+ 用 <b>File → Open</b> 直接打开即可；需要拆分信号线时选中图形按 <b>Ungroup</b>。
+  </div>
+</div>
+
+</div>
+
+<!-- 渲染器已内置（自研直角方波渲染器），不再依赖 WaveDrom CDN -->
+
+<script>
+/* ============================================================
+   State
+============================================================ */
+let currentImage = null;   // dataURL
+let currentJson = null;    // 当前 WaveJSON
+let currentSvg = null;     // 当前渲染出的 SVG 源码
+
+const $ = (id) => document.getElementById(id);
+
+/* ============================================================
+   模型服务表
+   国内这几家都提供 OpenAI 兼容接口，所以共用 callOpenAI()，只是 baseUrl / model 不同。
+   模型名会随厂商迭代变化，所以做成"预设 + 可手改"，选预设会自动填、也能自己覆盖。
+============================================================ */
+const PROVIDERS = {
+  qwen:          { base: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-vl-max',   api: 'openai',
+                   note: '阿里云 DashScope · 国内直连 · 图表/密集图形理解第一梯队，时序图首选' },
+  'qwen-flash':  { base: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen3-vl-flash', api: 'openai',
+                   note: '阿里云 DashScope · 比 qwen-vl-max 便宜不少，日常够用' },
+  zhipu:         { base: 'https://open.bigmodel.cn/api/paas/v4',              model: 'glm-4.6v',      api: 'openai',
+                   note: '智谱 · 中文图表能力强；模型名以控制台为准，可改成 glm-4v-plus 等' },
+  'zhipu-flash': { base: 'https://open.bigmodel.cn/api/paas/v4',              model: 'glm-4.6v-flash', api: 'openai',
+                   note: '智谱 · Flash 版有免费额度，适合先试质量' },
+  siliconflow:   { base: 'https://api.siliconflow.cn/v1',                     model: 'Qwen/Qwen2.5-VL-72B-Instruct', api: 'openai',
+                   note: '硅基流动 · 一个 Key 用多种开源 VL 模型，便宜；模型名可在控制台查' },
+  stepfun:       { base: 'https://api.stepfun.com/v1',                        model: 'step-1o-turbo-vision', api: 'openai',
+                   note: '阶跃星辰 · 图表理解好；模型名以控制台为准' },
+  doubao:        { base: 'https://ark.cn-beijing.volces.com/api/v3',          model: '',              api: 'openai',
+                   note: '火山方舟 · 模型 ID 要填你在方舟创建的「推理接入点 ID」（形如 ep-2024xxxx），不是模型名' },
+  openai:        { base: 'https://api.openai.com/v1',                         model: 'gpt-4o',        api: 'openai',
+                   note: '需要能访问 OpenAI 的网络' },
+  anthropic:     { base: 'https://api.anthropic.com',                         model: 'claude-sonnet-4-5-20250929', api: 'anthropic',
+                   note: '需要能访问 Anthropic 的网络' },
+  gemini:        { base: 'https://generativelanguage.googleapis.com/v1beta',  model: 'gemini-2.5-pro', api: 'gemini',
+                   note: '需要能访问 Google 的网络' },
+  custom:        { base: '', model: '', api: 'openai',
+                   note: '任何 OpenAI 兼容服务 —— 包括本地 vLLM / Ollama / LM Studio（base 填 http://localhost:11434/v1 之类）' },
+};
+
+function applyProvider() {
+  const p = PROVIDERS[$('model-select').value];
+  if (!p) return;
+  $('api-base').value = p.base;
+  $('model-id').value = p.model;
+  const hint = $('provider-hint');
+  hint.textContent = p.note;
+  hint.style.color = '#8a91a3';
+  hint.style.fontSize = '12.5px';
+}
+const dropzone = $('dropzone');
+const dzText = $('dropzone-text');
+const fileInput = $('file-input');
+const log = $('log');
+
+function logMsg(msg, isError = false) {
+  const ts = new Date().toLocaleTimeString();
+  log.textContent += `[${ts}] ${msg}\n`;
+  log.className = isError ? 'log error' : 'log';
+  log.scrollTop = log.scrollHeight;
+}
+function clearLog() { log.textContent = ''; }
+
+@@RENDERER_JS@@
+
+/* ============================================================
+   Image Input (paste / drop / file)
+============================================================ */
+dropzone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', e => loadFile(e.target.files[0]));
+
+['dragenter', 'dragover'].forEach(evt =>
+  dropzone.addEventListener(evt, e => {
+    e.preventDefault();
+    dropzone.classList.add('dragover');
+  })
+);
+['dragleave', 'drop'].forEach(evt =>
+  dropzone.addEventListener(evt, e => {
+    e.preventDefault();
+    dropzone.classList.remove('dragover');
+  })
+);
+dropzone.addEventListener('drop', e => {
+  e.preventDefault();
+  loadFile(e.dataTransfer.files[0]);
+});
+
+document.addEventListener('paste', e => {
+  const items = e.clipboardData.items;
+  for (const item of items) {
+    if (item.type.startsWith('image/')) {
+      const blob = item.getAsFile();
+      loadFile(blob);
+      break;
+    }
+  }
+});
+
+function loadFile(file) {
+  if (!file || !file.type.startsWith('image/')) {
+    logMsg('请提供图片文件', true); return;
+  }
+  logMsg(`加载图片: ${file.name} (${(file.size/1024).toFixed(1)} KB)`);
+  const reader = new FileReader();
+  reader.onload = e => {
+    currentImage = e.target.result;
+    dropzone.classList.add('has-image');
+    dzText.innerHTML = `<img src="${currentImage}">`;
+    $('btn-recognize').disabled = false;
+    logMsg('✓ 图片就绪，可以识别');
+  };
+  reader.readAsDataURL(file);
+}
+
+/* ============================================================
+   AI Vision Recognize
+============================================================ */
+$('btn-recognize').addEventListener('click', async () => {
+  if (!currentImage) { logMsg('没有图片', true); return; }
+
+  const providerKey = $('model-select').value;
+  const provider = PROVIDERS[providerKey] || PROVIDERS.custom;
+  const apiKey = $('api-key').value.trim();
+  const apiBase = $('api-base').value.trim() || provider.base;
+  const modelId = $('model-id').value.trim() || provider.model;
+
+  if (!apiKey) { logMsg('请填 API Key', true); return; }
+  if (!modelId) { logMsg('请填模型 ID' + (providerKey === 'doubao' ? '（火山方舟的推理接入点 ID，形如 ep-xxxx）' : ''), true); return; }
+  if (!apiBase) { logMsg('请填 API Base URL', true); return; }
+
+  clearLog();
+  logMsg(`调用 ${modelId} @ ${apiBase}`);
+
+  const prompt = buildPrompt();
+  try {
+    let rawText;
+    if (provider.api === 'anthropic') {
+      rawText = await callAnthropic(apiBase, apiKey, prompt, currentImage, modelId);
+    } else if (provider.api === 'gemini') {
+      rawText = await callGemini(apiBase, apiKey, prompt, currentImage, modelId);
+    } else {
+      rawText = await callOpenAI(apiBase, apiKey, prompt, currentImage, modelId);
+    }
+
+    logMsg('✓ AI 返回内容');
+
+    // 提取 JSON
+    const json = extractJson(rawText);
+    if (!json) { logMsg('AI 输出不含有效 JSON', true); return; }
+
+    logMsg('✓ JSON 解析成功');
+    setJson(json);
+    logMsg('✓ 后处理完成');
+    render();
+    logMsg('✓ 渲染完成');
+  } catch (err) {
+    logMsg('错误：' + err.message, true);
+  }
+});
+
+function buildPrompt() {
+  return @@VISION_PROMPT_JS@@;
+}
+
+function extractJson(text) {
+  // 先尝试直接 parse
+  try { return JSON.parse(text.trim()); } catch {}
+
+  // 尝试提取 markdown 内的 JSON
+  const match = text.match(/```(?:json)?\s*([\s\S]+?)```/);
+  if (match) {
+    try { return JSON.parse(match[1].trim()); } catch {}
+  }
+
+  // 尝试找首个 { 到末尾 }
+  const start = text.indexOf('{');
+  const end = text.lastIndexOf('}');
+  if (start !== -1 && end !== -1) {
+    try { return JSON.parse(text.substring(start, end + 1)); } catch {}
+  }
+  return null;
+}
+
+/* ============================================================
+   LLM API Calls
+============================================================ */
+async function callOpenAI(baseUrl, key, prompt, dataUrl, model = 'gpt-4o') {
+  const resp = await fetch(`${baseUrl}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${key}`
+    },
+    body: JSON.stringify({
+      model: model,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'text', text: prompt },
+          { type: 'image_url', image_url: { url: dataUrl } }
+        ]
+      }],
+      temperature: 0.1
+    })
+  });
+  const data = await resp.json();
+  if (data.error) throw new Error(data.error.message);
+  return data.choices[0].message.content;
+}
+
+async function callAnthropic(baseUrl, key, prompt, dataUrl, model = 'claude-sonnet-4-5-20250929') {
+  const mediaType = dataUrl.match(/data:(image\/\w+);base64,/)[1];
+  const b64 = dataUrl.split(',')[1];
+  const resp = await fetch(`${baseUrl}/v1/messages`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: model,
+      max_tokens: 2048,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: mediaType, data: b64 } },
+          { type: 'text', text: prompt }
+        ]
+      }]
+    })
+  });
+  const data = await resp.json();
+  if (data.error) throw new Error(data.error.message);
+  return data.content[0].text;
+}
+
+async function callGemini(baseUrl, key, prompt, dataUrl, model = 'gemini-2.5-pro') {
+  const mediaType = dataUrl.match(/data:(image\/\w+);base64,/)[1];
+  const b64 = dataUrl.split(',')[1];
+  const resp = await fetch(`${baseUrl}/models/${model}:generateContent?key=${key}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{
+        parts: [
+          { text: prompt },
+          { inline_data: { mime_type: mediaType, data: b64 } }
+        ]
+      }]
+    })
+  });
+  const data = await resp.json();
+  if (data.error) throw new Error(data.error.message);
+  return data.candidates[0].content.parts[0].text;
+}
+
+/* ============================================================
+   Post-process: fix wave field length alignment
+============================================================ */
+function postProcessJson() {
+  const editor = $('json-editor');
+  let json;
+  try { json = JSON.parse(editor.value); }
+  catch (e) { logMsg('JSON 解析失败：' + e.message, true); return; }
+
+  const signals = json.signal || [];
+  if (signals.length === 0) { logMsg('没有 signal 字段', true); return; }
+
+  // 1) 把 2-9 数据块字符降级为真实 0/1 电平（数据线被"吃掉"的兜底修复）
+  let converted = 0;
+  signals.forEach(s => {
+    if (!s.wave || !/[2-9]/.test(s.wave)) return;
+    const dataArr = Array.isArray(s.data) ? s.data : null;
+    let di = 0;
+    s.wave = s.wave.replace(/[2-9]/g, ch => {
+      let lv;
+      if (dataArr && di < dataArr.length) {
+        const bits = String(dataArr[di]).match(/[01]/g);
+        lv = bits ? bits[bits.length - 1] : ((parseInt(ch, 10) % 2) ? '1' : '0');
+      } else {
+        lv = (parseInt(ch, 10) % 2) ? '1' : '0';   // 2/4/6/8 -> 0, 3/5/7/9 -> 1
+      }
+      di++;
+      return lv;
+    });
+    converted++;
+  });
+
+  // 2) 补齐所有 wave 到最长长度
+  let maxLen = 0;
+  signals.forEach(s => { if (s.wave) maxLen = Math.max(maxLen, s.wave.length); });
+  signals.forEach(s => {
+    if (!s.wave) return;
+    while (s.wave.length < maxLen) s.wave += '.';
+  });
+
+  setJson(json);
+  logMsg(`已对齐所有 wave 到 ${maxLen} 字符`);
+  if (converted) {
+    logMsg(`✓ 已把 ${converted} 条信号上的 2-9 数据块还原为真实高低电平`);
+  }
+}
+
+function setJson(json) {
+  currentJson = json;
+  $('json-editor').value = JSON.stringify(json, null, 2);
+}
+
+/* ============================================================
+   Render
+============================================================ */
+function render() {
+  const editor = $('json-editor');
+  let json;
+  try { json = JSON.parse(editor.value); }
+  catch (e) { logMsg('JSON 解析失败：' + e.message, true); return; }
+
+  currentJson = json;
+  const target = $('render-area');
+  try {
+    const svg = renderWaveJson(json);
+    currentSvg = svg;
+    target.innerHTML = svg;
+    logMsg(`✓ 已渲染（直角方波 · ${(json.signal || []).length} 个信号）`);
+  } catch (e) {
+    logMsg('渲染失败：' + e.message, true);
+  }
+}
+
+/* ============================================================
+   Export: SVG / JSON / PNG / Visio
+============================================================ */
+function downloadSvg() {
+  if (!currentJson) { alert('没有 JSON'); return; }
+  const svg = renderWaveJson(currentJson);
+  download(svg, 'waveform.svg', 'image/svg+xml');
+  logMsg('✓ SVG 已下载（直角方波，可直接拖入 Visio）');
+}
+
+function downloadJson() {
+  if (!currentJson) { alert('没有 JSON'); return; }
+  download(currentJson, 'waveform.json', 'application/json');
+}
+
+function downloadPng() {
+  // 用 canvas 渲染 SVG 转 PNG
+  const svgEl = document.querySelector('#render-area svg');
+  if (!svgEl) { alert('请先渲染'); return; }
+  const xml = new XMLSerializer().serializeToString(svgEl);
+  const img = new Image();
+  const blob = new Blob([xml], { type: 'image/svg+xml' });
+  const url = URL.createObjectURL(blob);
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = svgEl.viewBox.baseVal.width || img.width;
+    canvas.height = svgEl.viewBox.baseVal.height || img.height;
+    canvas.getContext('2d').drawImage(img, 0, 0);
+    canvas.toBlob(blob => {
+      download(blob, 'waveform.png');
+      URL.revokeObjectURL(url);
+    });
+  };
+  img.src = url;
+}
+
+function downloadForVisio() {
+  if (!currentJson) { alert('没有 JSON'); return; }
+  const svg = renderWaveJson(currentJson);
+  download(svg, 'waveform-for-visio.svg', 'image/svg+xml');
+  logMsg('✓ 已下载 — Visio 2024+ 用 File → Open 打开该 SVG；要拆成可编辑形状就 Ungroup');
+}
+
+function download(content, filename, type) {
+  const blob = content instanceof Blob ? content : new Blob([content], { type: type || 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+/* ============================================================
+   Init
+============================================================ */
+$('model-select').addEventListener('change', applyProvider);
+applyProvider();
+
+$('json-editor').value = '';
+logMsg('工具就绪。粘贴或拖拽图片开始。');
+
+</script>
+</body>
+</html>

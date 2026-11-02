@@ -1,0 +1,11 @@
+{
+  "head":{"text":"SPI Mode 0 Full-Duplex · MOSI=0x5A · MISO=0xC3 · CPOL=0 CPHA=0"},
+  "signal":[
+    {"name":"CS_n","wave":"10.......1"},
+    {"name":"SCLK","wave":"p.p.p.p.p."},
+    {"name":"MOSI","wave":"x23456789x","data":["D7=0","D6=1","D5=0","D4=1","D3=1","D2=0","D1=1","D0=0"]},
+    {"name":"MISO","wave":"x23456789x","data":["D7=1","D6=1","D5=0","D4=0","D3=0","D2=0","D1=1","D0=1"]}
+  ],
+  "config":{"hscale":2},
+  "foot":{"text":"Test 1: 识别自 test-input-spi.png · 8 周期 · MSB First"}
+}

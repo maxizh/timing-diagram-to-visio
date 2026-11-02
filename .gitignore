@@ -1,0 +1,36 @@
+# ---- 厂商版权文件：不进仓库 ----
+# TI / ADI / ISSI 等厂商 datasheet 原图与 PDF 有版权，只在本地做测试用。
+# 自检 [9.7] 组会引用 figs/ 下的图做基线断言 —— 本地有就跑，没有就跳过该条。
+test-cases/real-datasheets/dl/
+test-cases/real-datasheets/figs/
+test-cases/real-datasheets/scout/
+*.pdf
+
+# 大体积中间产物（可由脚本重新生成）
+test-cases/real-datasheets/real-datasheet-candidates.html
+test-cases/real-datasheets/*.png
+assets/verify-report.html
+
+# ---- 无关项目的临时产物 ----
+# 这几个是别的项目落在本目录的，与时序图工具无关（2026-11-02 清理）
+ai_fde_fabless_validation.html
+ai_mystic_overseas_validation.html
+verdi-to-visio.html
+--output
+
+# ---- 系统与工具产物 ----
+.DS_Store
+__pycache__/
+*.pyc
+*.bak-*
+*.removed-*
+.venv/
+venv/
+
+# ---- 编辑器 ----
+.vscode/
+.idea/
+*.swp
+
+# ---- 会话工作区数据（不属于源码）----
+.workbuddy/memory/

@@ -1,0 +1,29 @@
+{
+  "head": {
+    "text": "SPI Mode 0 Full-Duplex · MOSI=0x5A · MISO=0xC3 · CPOL=0 CPHA=0"
+  },
+  "signal": [
+    {
+      "name": "CS_n",
+      "wave": "11000000000000000011"
+    },
+    {
+      "name": "SCLK",
+      "wave": "00010101010101010100"
+    },
+    {
+      "name": "MOSI",
+      "wave": "00001100111100110000"
+    },
+    {
+      "name": "MISO",
+      "wave": "00111100000000111100"
+    }
+  ],
+  "config": {
+    "hscale": 1
+  },
+  "foot": {
+    "text": "MOSI: 0101_1010 = 0x5A · MISO: 1100_0011 = 0xC3 · MSB First"
+  }
+}

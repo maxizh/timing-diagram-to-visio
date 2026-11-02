@@ -1,0 +1,514 @@
+<!-- 本文件由 scripts/build_web.py 生成，请勿手改 -->
+<!-- 模板文件 — 不要直接使用。改完请运行： python3 scripts/build_web.py -->
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="nZUareN8D4JpM8KsSe40u3">
+<head data-page-node-id="98APmQG7Jti2L6VmWIOkrX">
+<meta charset="UTF-8" data-page-node-id="hipkaT6ymCnRCdwNqA95Hd">
+<title>WaveJSON Viewer — 时序图预览器</title>
+<style>
+  body {
+    margin: 0;
+    padding: 24px;
+    background: #0f1419;
+    color: #e6e9ef;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  }
+  .container { max-width: 1100px; margin: 0 auto; }
+  h1 { font-size: 22px; margin-bottom: 6px; color: #d4a574; }
+  .sub { color: #8a91a3; font-size: 13px; margin-bottom: 24px; }
+  .panel {
+    background: #1a1f29;
+    border: 1px solid #2d3548;
+    border-radius: 6px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .panel-title {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: #d4a574;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  textarea {
+    width: 100%;
+    min-height: 240px;
+    background: #0f1419;
+    border: 1px solid #2d3548;
+    color: #e6e9ef;
+    border-radius: 4px;
+    padding: 12px;
+    font-family: "SF Mono", Menlo, monospace;
+    font-size: 13px;
+    resize: vertical;
+    box-sizing: border-box;
+  }
+  button {
+    background: #d4a574;
+    color: #0f1419;
+    border: 0;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-right: 8px;
+  }
+  button:hover { background: #c9a86a; }
+  .render {
+    background: #ffffff;
+    border: 1px solid #2d3548;
+    border-radius: 4px;
+    padding: 20px;
+    min-height: 240px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-x: auto;
+  }
+  .controls { margin: 12px 0; }
+</style>
+</head>
+<body data-page-node-id="waPocyL8ZTi7aCZwTniU2m">
+<div class="container" data-page-node-id="tH68hIuAh5IjcSq48zJOtL">
+
+<h1 data-page-node-id="IuAGkSPtP6RHglva2ixRPr">WaveJSON Viewer</h1>
+<div class="sub" data-page-node-id="y4cml592p6X6HtiLGMKBD7">粘贴 WaveJSON → 直角方波渲染 → 导出 SVG（可直接进 Visio）</div>
+
+<div class="panel" data-page-node-id="TJFRWCer0gtmi2Ch3tyg7U">
+  <div class="panel-title" data-page-node-id="FQFFX2KEZIO6H57jtxRJgC">WaveJSON INPUT</div>
+  <textarea id="json-input" placeholder='{ "signal": [...], "config": { "hscale": 2 } }'></textarea>
+  <div class="controls" data-page-node-id="oDQrgHdojNV8jiS02PoP9d">
+    <button onclick="render()" data-page-node-id="IorGsZ7ggTDj8qQyca0R5I">渲染</button>
+    <button onclick="downloadJson()" data-page-node-id="VvyvTFVl5VMOoqBX7Gbm96">下载 .json</button>
+    <button onclick="downloadSvg()" data-page-node-id="qsion1Ckg2QMXyAIErMrXr">下载 .svg</button>
+    <button onclick="loadSample()" data-page-node-id="nLbV2a9t6YBGXo74Z7uYjH">载入样例</button>
+  </div>
+</div>
+
+<div class="panel" data-page-node-id="pFzjLm1M9r1DsVYq03AcG3">
+  <div class="panel-title" data-page-node-id="AOk1u1vYKWMp5B0D1Zi205">RENDERED DIAGRAM</div>
+  <div class="render" id="diagram" data-page-node-id="XOSRH4klhtXQxxMdQpzqnD">
+    <span style="color:#8a91a3" data-page-node-id="QVgmAMAk2QCG2teAjM0A5Q">点击「渲染」或「载入样例」开始</span>
+  </div>
+</div>
+
+</div>
+
+<script>
+/* ============================================================
+   直角方波渲染器（替代 WaveDrom）
+
+   为什么不用官方 WaveDrom：
+     1) 它的电平过渡是斜边梯形，不是原厂时序图的直角方波；
+     2) 用 "0000" 这类显式重复字符时，WaveDrom 会在每个字符边界画一个小转折，
+        CS_n 这种全程恒定的低电平会变成一排尖刺；
+     3) 它的 2-9 字符会画成彩色数据块 —— 而那正是把数据线高低电平"吃掉"的元凶。
+
+   本渲染器只把字符当作"电平段"，相邻同电平自动合并、不画多余记号，
+   输出白底黑线的纯 path/text SVG，Visio 2024+ 可 File→Open 直接导入并 Ungroup 编辑。
+============================================================ */
+const RJS = {
+  CELL: 26, ROW: 62, LABEL_W: 112,
+  BG: '#ffffff', LINE: '#000000', LABEL: '#1f4e9c',
+  TITLE: '#111111', GRID: '#c9ccd1', BITLBL: '#6b7280',
+  FONT: 'Helvetica, Arial, sans-serif',
+  GRID_STEP: 2,      /* 竖虚线间隔（字符数）：2 = 每 1 个数据位一条 */
+  GRID_LABELS: true, /* 顶部 D7…D0 位标尺 */
+};
+
+/* wave 字符 -> 逐字符电平
+   0 低 / 1 高 / . = 沿用前值 / p 视作高 / x 未知（x_style="hatch" 时画 Don't Care 斜纹）
+   / z 高阻 / 2-9 数据块（色块颜色见 sig.colors）
+
+   可选扩展（不给就保持老行为，与 wavejson2svg.py 必须一致 —— 铁律 8）：
+     config.ruler_step   位标尺 / 竖虚线步长（字符数），默认 2 = 1 bit 2 字符；4 = 每时钟 4 字符
+     config.ruler_offset 标尺文字相对格起点的偏移，默认 ruler_step//2（居中）；0 = 压在格左边界
+     config.x_style      'tint'（默认淡灰底）| 'hatch'（斜纹 = 原厂图的 Don't Care）
+     config.x_line       false = 未定义态区间内不画电平线（Don't Care 只留斜纹带）；默认 true
+     config.grid_step    覆盖 RJS.GRID_STEP
+     sig.colors[]        与 sig.data 同序的色块填充色，用尽后循环；默认 #e8e4ff
+     sig.dash            true = 该行折线画虚线（未驱动的 DQS / 未反选的 CS）
+     sig.blank           true = 只占行高、不画任何东西（分组留白） */
+function decodeWave(wave) {
+  const out = [];
+  let prev = 0;
+  for (const ch of wave) {
+    let lv, kind = 'lv';
+    if (ch === '0') lv = 0;
+    else if (ch === '1') lv = 1;
+    else if (ch === '.' || ch === '=') lv = prev;
+    else if (ch === 'p') lv = 1;
+    else if (ch === 'x') { lv = null; kind = 'x'; }
+    else if (ch === 'z') { lv = 0.5; kind = 'z'; }
+    else if ('23456789'.includes(ch)) { lv = 1; kind = 'blk'; }
+    else lv = 0;
+    out.push({ lv, kind });
+    if (kind === 'lv' || kind === 'blk') prev = lv;
+  }
+  return out;
+}
+
+/* 在矩形内生成 45°「/」斜纹线段 -> [[x1,y1,x2,y2], ...]
+   为什么不用 <pattern>：Visio 对 SVG pattern 的导入不可靠（可能整块丢成纯色/空白），
+   而这份 SVG 的用途就是「进 Visio 继续编辑」，显式 line 几何 100% 可导入。
+   直线参数化 u = X + Y = c（图像坐标 y 向下，故 u=c 即「/」方向）。 */
+function hatchSegments(x, y, w, h, spacing) {
+  const sp = spacing || 7;
+  const x0 = x, y0 = y, x1 = x + w, y1 = y + h;
+  const segs = [];
+  for (let c = Math.floor((x0 + y0) / sp) * sp; c <= x1 + y1; c += sp) {
+    const pts = [];
+    [x0, x1].forEach(ex => { const ey = c - ex; if (ey >= y0 && ey <= y1) pts.push([ex, ey]); });
+    [y0, y1].forEach(ey => { const ex = c - ey; if (ex >= x0 && ex <= x1) pts.push([ex, ey]); });
+    const uniq = [];
+    pts.forEach(pt => {
+      if (!uniq.some(q => Math.abs(pt[0] - q[0]) < 1e-6 && Math.abs(pt[1] - q[1]) < 1e-6)) uniq.push(pt);
+    });
+    if (uniq.length >= 2) {
+      uniq.sort((a, b) => a[0] - b[0]);
+      segs.push([uniq[0][0], uniq[0][1], uniq[uniq.length - 1][0], uniq[uniq.length - 1][1]]);
+    }
+  }
+  return segs;
+}
+
+/* 生成折线点：默认仅在同电平之间插入垂直线段（直角方波）
+   edges（可选，向后兼容）：边沿斜坡表，描述「边沿不是垂直的」。
+     每项 = {at: 字符位(可小数), from: 0|1, to: 0|1, width: 斜坡宽度(字符数)}
+
+   ⚠️ edges 是权威的（与 wavejson2svg.py 必须一致，铁律 8）：
+     wave 只提供「哪段高、哪段低」；每个 edge 认领它区间内的**第一个**跳变点，
+     用斜坡代替那个垂直跳变；其余跳变照原样画垂直线。
+     理由：wave 字符串只能表达整数位电平，而正弦波边沿常落在非整数位置
+     （如「高平台占 1.5 字符」）。不这样处理就会多画出一竖。 */
+function waveToPolyline(levels, x0, cell, yLow, yHigh, edges) {
+  const yOf = lv => (lv === null ? (yLow + yHigh) / 2 : yLow - lv * (yLow - yHigh));
+
+  const es = [];
+  (edges || []).forEach(e => {
+    const at = parseFloat(e.at), w = parseFloat(e.width);
+    if (!isNaN(at) && !isNaN(w) && w > 0) es.push([at, w, e]);
+  });
+  es.sort((a, b) => a[0] - b[0]);
+
+  const jumps = [];
+  for (let i = 1; i < levels.length; i++) {
+    if (Math.abs(yOf(levels[i]) - yOf(levels[i - 1])) > 1e-9) jumps.push(i);
+  }
+
+  const edgeForJump = {};
+  const suppressed = new Set();
+  es.forEach(([at, w, e]) => {
+    for (const i of jumps) {
+      if (edgeForJump[i] || suppressed.has(i)) continue;
+      if (at - 1e-6 <= i && i <= at + w + 1e-6) {
+        edgeForJump[i] = [at, w, e];
+        /* 抑制斜坡前后各一个整数位的跳变 —— 斜坡本身已跨越那两段，
+           不抑制就会与斜坡重复画（与 wavejson2svg.py 必须一致，铁律 8） */
+        [i - 1, i + 1].forEach(j => { if (jumps.includes(j) && !edgeForJump[j]) suppressed.add(j); });
+        break;
+      }
+    }
+  });
+
+  const pts = [[x0, yOf(levels[0])]];
+  jumps.forEach(i => {
+    const x = x0 + i * cell;
+    const yp = yOf(levels[i - 1]), y = yOf(levels[i]);
+    if (edgeForJump[i]) {
+      const [at, w, e] = edgeForJump[i];
+      const from = (e.from === undefined || e.from === null) ? levels[i - 1] : e.from;
+      const to = (e.to === undefined || e.to === null) ? levels[i] : e.to;
+      pts.push([x0 + at * cell, yOf(from)]);
+      pts.push([x0 + (at + w) * cell, yOf(to)]);
+    } else if (suppressed.has(i)) {
+      /* 由斜坡覆盖，不画垂直线 */
+    } else {
+      pts.push([x, yp]); pts.push([x, y]);
+    }
+  });
+  pts.push([x0 + levels.length * cell, yOf(levels[levels.length - 1])]);
+  return pts;
+}
+
+/* 把逐字符状态切成若干「非 x」连续段 -> [[起 x, 电平数组], ...]
+   用于 config.x_line=false：Don't Care（斜纹）区间不落笔，画出来就是
+   「上下边界 + 一条斜纹带」，与 wavejson2svg.py 的 polyline_runs 一致（铁律 8）。 */
+function polylineRuns(chars, x0, cell) {
+  const segs = [];
+  let cur = null, curX = null;
+  chars.forEach((o, i) => {
+    if (o.kind === 'x') {
+      if (cur && cur.length) segs.push([curX, cur]);
+      cur = null; curX = null;
+    } else {
+      if (cur === null) { cur = []; curX = x0 + i * cell; }
+      cur.push(o.lv);
+    }
+  });
+  if (cur && cur.length) segs.push([curX, cur]);
+  return segs;
+}
+
+function escXml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+/* WaveJSON -> SVG 字符串 */
+function renderWaveJson(wj) {
+  const cell = RJS.CELL, rowH = RJS.ROW, labelW = RJS.LABEL_W;
+  const signals = wj.signal || [];
+  const head = ((wj.head || {}).text) || '';
+  const foot = ((wj.foot || {}).text) || '';
+  const cfg = wj.config || {};
+  const n = signals.reduce((m, s) => Math.max(m, (s.wave || '').length), 0);
+  const waveW = n * cell;
+
+  /* 位标尺 / 竖虚线步长（字符数）与标尺文字偏移 */
+  let rulerStep = parseInt(cfg.ruler_step, 10) || 2;
+  if (rulerStep < 1) rulerStep = 2;
+  const rulerOff = (cfg.ruler_offset === undefined || cfg.ruler_offset === null)
+    ? Math.floor(rulerStep / 2) : parseInt(cfg.ruler_offset, 10);
+  const xStyle = cfg.x_style || 'tint';
+  const gridStep = (cfg.grid_step !== undefined && cfg.grid_step !== null)
+    ? parseInt(cfg.grid_step, 10) : RJS.GRID_STEP;
+
+  /* 位标尺：优先用外部给的标签（PDF 的 T0..T9 或厂商图的 T0..T23），
+     否则只在长度符合「首尾各留 2 字符、1 bit = 2 字符」时推导 D7…D0 */
+  let bits = [];
+  if (cfg.ruler && RJS.GRID_LABELS) {
+    bits = cfg.ruler.map(String);
+  } else if (RJS.GRID_LABELS && n >= 4 && (n - 4) % 2 === 0) {
+    const nb = (n - 4) / 2;
+    for (let i = 0; i < nb; i++) bits.push('D' + (nb - 1 - i));
+  }
+
+  const headH = head ? 34 : 8, footH = foot ? 34 : 8;
+  const lblH = bits.length ? 20 : 0;
+  const bodyH = rowH * signals.length;
+  const top0 = headH + lblH;
+  const W = labelW + waveW + 24;
+  const H = top0 + bodyH + footH;
+  const x0 = labelW;
+  const p = [];
+
+  p.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`);
+  p.push(`<rect x="0" y="0" width="${W}" height="${H}" fill="${RJS.BG}"/>`);
+  if (head) {
+    p.push(`<text x="${(W / 2).toFixed(1)}" y="${(headH * 0.62).toFixed(1)}" text-anchor="middle" font-family="${RJS.FONT}" font-size="14" font-weight="bold" fill="${RJS.TITLE}">${escXml(head)}</text>`);
+  }
+
+  /* 1. 轨道分隔底色（先铺底，虚线压在它上面） */
+  signals.forEach((sig, si) => {
+    if (si % 2 === 1) {
+      const top = top0 + si * rowH;
+      p.push(`<rect x="0" y="${top.toFixed(1)}" width="${W}" height="${rowH}" fill="#000" fill-opacity="0.022"/>`);
+    }
+  });
+
+  /* 2. 贯穿全部信号的时钟对齐虚线（画在波形之前，不盖电平边沿）
+        一条线同时穿过所有信号，用于确认「第 k 个数据位 == 第 k 个 SCLK 周期」 */
+  if (gridStep && gridStep > 0) {
+    const gy1 = lblH ? (top0 - lblH + 5) : (top0 + 4);
+    const gy2 = top0 + bodyH - 4;
+    for (let i = gridStep; i < n; i += gridStep) {
+      const gx = x0 + i * cell;
+      p.push(`<line x1="${gx.toFixed(1)}" y1="${gy1.toFixed(1)}" x2="${gx.toFixed(1)}" y2="${gy2.toFixed(1)}" stroke="${RJS.GRID}" stroke-width="0.7" stroke-dasharray="3,3"/>`);
+    }
+  }
+
+  /* 3. 位标尺，按 ruler_step / ruler_offset 摆放 */
+  bits.forEach((lbl, k) => {
+    if (!String(lbl).trim()) return;
+    const cx = x0 + (rulerStep * k + rulerOff) * cell;
+    p.push(`<text x="${cx.toFixed(1)}" y="${(headH + lblH * 0.70).toFixed(1)}" text-anchor="middle" font-family="${RJS.FONT}" font-size="11.5" fill="${RJS.BITLBL}">${escXml(lbl)}</text>`);
+  });
+
+  /* 4. 每条信号 */
+  signals.forEach((sig, si) => {
+    if (sig.blank) return;
+    const top = top0 + si * rowH;
+    const pad = rowH * 0.17;
+    const yHigh = top + pad, yLow = top + rowH - 1 - pad;
+    const chars = decodeWave(sig.wave || '');
+
+    /* 未知态底色（tint 淡灰底 / hatch 斜纹 = Don't Care）
+       连续 x 合并成一个区域：hatch 模式给「边界 + 显式斜线」，
+       逐字符画会多出内部竖线，用 <pattern> 则 Visio 导入不可靠 */
+    const xFill = (xStyle === 'hatch') ? '#ffffff' : '#c9ccd1';
+    const xOp = (xStyle === 'hatch') ? '' : ' fill-opacity="0.30"';
+    const xStroke = (xStyle === 'hatch') ? ' stroke="#6b7280" stroke-width="1"' : '';
+    for (let i = 0; i < chars.length; i++) {
+      if (chars[i].kind !== 'x') continue;
+      let j = i;
+      while (j < chars.length && chars[j].kind === 'x') j++;
+      const rx = x0 + i * cell, rw = (j - i) * cell;
+      /* 顺序不能反：白底矩形先画、斜线画在上面
+         （第一版反了，白色填充把斜线盖掉，图上是空框） */
+      p.push(`<rect x="${rx.toFixed(1)}" y="${yHigh.toFixed(1)}" width="${rw.toFixed(1)}" height="${(yLow - yHigh).toFixed(1)}" fill="${xFill}"${xOp}${xStroke}/>`);
+      if (xStyle === 'hatch') {
+        p.push('<g stroke="#9aa0a6" stroke-width="0.9">');
+        hatchSegments(rx, yHigh, rw, yLow - yHigh).forEach(s => {
+          p.push(`<line x1="${s[0].toFixed(1)}" y1="${s[1].toFixed(1)}" x2="${s[2].toFixed(1)}" y2="${s[3].toFixed(1)}"/>`);
+        });
+        p.push('</g>');
+      }
+      i = j - 1;
+    }
+
+    const xLine = (cfg.x_line === undefined || cfg.x_line === null) ? true : !!cfg.x_line;
+    const runs = xLine ? [[x0, chars.map(o => o.lv)]] : polylineRuns(chars, x0, cell);
+    const dashAttr = sig.dash ? ' stroke-dasharray="5,3"' : '';
+    runs.forEach(([sx, lvs]) => {
+      /* 斜坡边沿（sig.edges）：x_line=false 时按段起点平移字符位 */
+      let segEdges = null;
+      if (sig.edges && sig.edges.length) {
+        if (sx === x0) {
+          segEdges = sig.edges;
+        } else {
+          const off = cell ? (sx - x0) / cell : 0;
+          segEdges = sig.edges.map(e => ({ at: parseFloat(e.at) - off, width: e.width }))
+            .filter(e => !isNaN(e.at));
+        }
+      }
+      const pts = waveToPolyline(lvs, sx, cell, yLow, yHigh, segEdges);
+      const d = 'M ' + pts.map(([a, b]) => `${a.toFixed(2)},${b.toFixed(2)}`).join(' L ');
+      p.push(`<path d="${d}" fill="none" stroke="${RJS.LINE}" stroke-width="1.6" stroke-linejoin="miter" stroke-linecap="butt"${dashAttr}/>`);
+    });
+
+    /* 数据块（2-9）：矩形 + 数值文字
+       · `2..` 里的 `.` / `=` 是**延续**，要把整块拉宽（不是每个字符一个小方块）
+       · 文字优先取 sig.data（WaveDrom 语义：按块出现顺序消费，用尽后循环），
+         没有 data 时退回显示块字符本身（兼容老行为）
+       · 填充色取 sig.colors（与 data 同序；不给则用默认淡紫） */
+    const wave = sig.wave || '';
+    const data = sig.data || [];
+    const colors = sig.colors || [];
+    let blkIdx = 0, bi = 0;
+    while (bi < wave.length) {
+      if (!'23456789'.includes(wave[bi])) { bi++; continue; }
+      let bj = bi + 1;
+      while (bj < wave.length && (wave[bj] === '.' || wave[bj] === '=')) bj++;
+      const bx = x0 + bi * cell, bh = yLow - yHigh, bw = (bj - bi) * cell;
+      const fill = colors.length ? colors[blkIdx % colors.length] : '#e8e4ff';
+      p.push(`<rect x="${bx.toFixed(1)}" y="${yHigh.toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" fill="${fill}" stroke="${RJS.LINE}" stroke-width="1"/>`);
+      const label = data.length ? data[blkIdx % data.length] : wave[bi];
+      // 字号自适应：既要装得下 cell*0.55 的字高，也要装得下这段文字的总宽。
+        // 系数 1.85 = 1/0.54（Helvetica 平均字宽 ≈ 0.54×字号），留一点安全边。
+        // 与 wavejson2svg.py 必须保持一致（铁律 8）。
+        const fs = Math.min(11, cell * 0.55, bw / Math.max(1, String(label).length) * 1.85);
+      if (String(label)) {
+        p.push(`<text x="${(bx + bw / 2).toFixed(1)}" y="${(yHigh + bh * 0.68).toFixed(1)}" text-anchor="middle" font-family="${RJS.FONT}" font-size="${fs.toFixed(1)}" fill="#222">${escXml(label)}</text>`);
+      }
+      blkIdx++;
+      bi = bj;
+    }
+
+    if (String(sig.name || '').trim()) {
+      p.push(`<text x="${labelW - 10}" y="${((yHigh + yLow) / 2 + 4).toFixed(1)}" text-anchor="end" font-family="${RJS.FONT}" font-size="14" font-weight="bold" fill="${RJS.LABEL}">${escXml(sig.name || '')}</text>`);
+    }
+
+    /* 延时标注（sig.delays）：画在信号行上方的空隙
+       横线 + 两端箭头 + 居中文字。格式 {from, to, label, dy}，from/to 为字符位。
+       原厂图用它标注「RL = 10」这类读延时。与 wavejson2svg.py 必须一致（铁律 8）。 */
+    (sig.delays || []).forEach(d => {
+      const fa = parseFloat(d.from), ta = parseFloat(d.to);
+      if (isNaN(fa) || isNaN(ta) || ta <= fa) return;
+      const dx = x0 + fa * cell, tx = x0 + ta * cell;
+      const dy = parseFloat(d.dy) || 0;
+      const ay = yHigh - 9 - dy;
+      p.push(`<line x1="${dx.toFixed(1)}" y1="${ay.toFixed(1)}" x2="${tx.toFixed(1)}" y2="${ay.toFixed(1)}" stroke="#111" stroke-width="1"/>`);
+      [[dx, 1], [tx, -1]].forEach(([ax, sgn]) => {
+        p.push(`<path d="M ${ax.toFixed(1)},${ay.toFixed(1)} L ${(ax + sgn * 8).toFixed(1)},${(ay - 3.6).toFixed(1)} L ${(ax + sgn * 8).toFixed(1)},${(ay + 3.6).toFixed(1)} Z" fill="#111"/>`);
+      });
+      const lbl = String(d.label || '');
+      if (lbl) {
+        p.push(`<text x="${((dx + tx) / 2).toFixed(1)}" y="${(ay - 4).toFixed(1)}" text-anchor="middle" font-family="${RJS.FONT}" font-size="12.5" fill="#111">${escXml(lbl)}</text>`);
+      }
+    });
+  });
+
+  if (foot) {
+    p.push(`<text x="${(labelW + waveW / 2).toFixed(1)}" y="${(H - footH * 0.36).toFixed(1)}" text-anchor="middle" font-family="${RJS.FONT}" font-size="12.5" fill="${RJS.TITLE}">${escXml(foot)}</text>`);
+  }
+  p.push('</svg>');
+  return p.join('\n');
+}
+
+
+/* SPI Mode 0 · MOSI=0x5A · MISO=0xC3
+   数据线一律用 0/1 表达真实高低电平 —— 2-9 会渲染成数据块，不是电平！
+   1 个 bit = 2 个字符，首尾各留 2 字符空闲 → 全部 20 字符对齐 */
+const SAMPLE_SPI = {
+  "head": {
+    "text": "SPI Mode 0 · MOSI=0x5A · MISO=0xC3 · CPOL=0 CPHA=0"
+  },
+  "signal": [
+    {
+      "name": "CS_n",
+      "wave": "11000000000000000011"
+    },
+    {
+      "name": "SCLK",
+      "wave": "00010101010101010100"
+    },
+    {
+      "name": "MOSI",
+      "wave": "00001100111100110000"
+    },
+    {
+      "name": "MISO",
+      "wave": "00111100000000111100"
+    }
+  ],
+  "config": {
+    "hscale": 1
+  },
+  "foot": {
+    "text": "MOSI: 0101_1010 = 0x5A · MISO: 1100_0011 = 0xC3 · MSB First"
+  }
+};
+
+function render() {
+  const input = document.getElementById('json-input').value.trim();
+  if (!input) { alert('请输入 WaveJSON'); return; }
+  let parsed;
+  try { parsed = JSON.parse(input); }
+  catch (e) { alert('JSON 解析错误：' + e.message); return; }
+
+  const target = document.getElementById('diagram');
+  try {
+    target.innerHTML = renderWaveJson(parsed);
+    currentSvg = target.innerHTML;
+  } catch (e) { alert('渲染错误：' + e.message); }
+}
+
+function loadSample() {
+  document.getElementById('json-input').value = JSON.stringify(SAMPLE_SPI, null, 2);
+  render();
+}
+
+function downloadJson() {
+  const input = document.getElementById('json-input').value;
+  if (!input) { alert('没有内容'); return; }
+  const blob = new Blob([input], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'waveform.json';
+  a.click();
+}
+
+let currentSvg = null;
+
+function downloadSvg() {
+  if (!currentSvg) { alert('请先渲染'); return; }
+  const blob = new Blob([currentSvg], { type: 'image/svg+xml' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'waveform.svg';
+  a.click();
+}
+</script>
+</body>
+</html>

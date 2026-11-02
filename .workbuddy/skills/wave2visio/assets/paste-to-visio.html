@@ -1,0 +1,990 @@
+<!-- 本文件由 scripts/build_web.py 生成，请勿手改 -->
+<!-- 模板文件 — 不要直接使用。
+     改完请运行： python3 scripts/build_web.py
+     生成物： assets/paste-to-visio.html -->
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="vnHP2QXt5TLNjAYEbSAv8L">
+<head data-page-node-id="VvBaGijeNNl3EZFN2ICfqV">
+<meta charset="UTF-8" data-page-node-id="gUihN7RbLwGnFCRWr6ukOb">
+<title>WaveJSON Paste-to-Visio</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 24px;
+    background: #0f1419;
+    color: #e6e9ef;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+    line-height: 1.6;
+  }
+  .container { max-width: 1100px; margin: 0 auto; }
+  h1 { font-size: 22px; color: #d4a574; margin-bottom: 4px; }
+  .sub { color: #8a91a3; font-size: 13px; margin-bottom: 20px; }
+
+  .panel {
+    background: #1a1f29;
+    border: 1px solid #2d3548;
+    border-radius: 6px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .panel-title {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: #d4a574;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  /* Drop zone */
+  .dropzone {
+    border: 2px dashed #2d3548;
+    border-radius: 6px;
+    padding: 36px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #0f1419;
+  }
+  .dropzone:hover { border-color: #d4a574; background: rgba(212,165,116,0.04); }
+  .dropzone.dragover { border-color: #d4a574; background: rgba(212,165,116,0.08); }
+  .dropzone.has-image { padding: 12px; }
+  .dropzone img { max-width: 100%; max-height: 280px; border-radius: 4px; }
+
+  /* Controls */
+  .row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 10px; }
+  label { font-size: 12px; color: #8a91a3; margin-bottom: 4px; display: block; }
+  select, input[type=text], input[type=password] {
+    width: 100%;
+    background: #0f1419;
+    border: 1px solid #2d3548;
+    color: #e6e9ef;
+    padding: 8px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: inherit;
+  }
+  input[type=password] { font-family: monospace; }
+  select optgroup { background: #1a1f29; color: #8a91a3; font-size: 12px; }
+  select option { background: #0f1419; color: #e6e9ef; }
+
+  button {
+    background: #d4a574;
+    color: #0f1419;
+    border: 0;
+    padding: 9px 16px;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-right: 8px;
+    margin-top: 6px;
+    font-size: 13px;
+  }
+  button:hover { background: #c9a86a; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  button.secondary { background: transparent; color: #d4a574; border: 1px solid #d4a574; }
+
+  /* Render area */
+  .render {
+    background: #fafafa;
+    border: 1px solid #2d3548;
+    border-radius: 4px;
+    padding: 24px;
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-x: auto;
+  }
+  .render .empty { color: #8a91a3; }
+
+  /* Status / log */
+  .log {
+    background: #0f1419;
+    border: 1px solid #2d3548;
+    border-radius: 4px;
+    padding: 10px 12px;
+    font-family: "SF Mono", Menlo, monospace;
+    font-size: 12px;
+    color: #6fb98f;
+    max-height: 120px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+  }
+  .log.error { color: #c97070; }
+
+  /* JSON editor */
+  textarea {
+    width: 100%;
+    min-height: 240px;
+    background: #0f1419;
+    border: 1px solid #2d3548;
+    color: #e6e9ef;
+    border-radius: 4px;
+    padding: 10px;
+    font-family: "SF Mono", Menlo, monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    resize: vertical;
+  }
+
+  .hint { color: #8a91a3; font-size: 12px; }
+  .pill {
+    display: inline-block;
+    background: rgba(212,165,116,0.15);
+    color: #d4a574;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    margin-right: 6px;
+  }
+</style>
+</head>
+<body data-page-node-id="ESjzm9RkPZP9ALonsoTmKg">
+<div class="container" data-page-node-id="979v1XMonf8cZsLLxZhlwQ">
+
+<h1 data-page-node-id="WwtM2kGqkBG5NezCm0uvFx">📋 WaveJSON Paste-to-Visio</h1>
+<div class="sub" data-page-node-id="IJiBOnX7J6w300CncD11rQ">规则化波形图（截图 / 拍照 / PDF 截屏）→ AI 识别 → WaveJSON → 渲染 → 导出 Visio</div>
+
+<!-- 1. 粘贴图片区 -->
+<div class="panel" data-page-node-id="LUzlh9RGJ8vi1mEP5xuLDG">
+  <div class="panel-title" data-page-node-id="3qmlf0Pp7mmrECQGNMgZ8K">① 粘贴或拖拽波形图</div>
+  <div class="dropzone" id="dropzone" data-page-node-id="VLvQfER0E7wBRM37FPZICb">
+    <div id="dropzone-text" data-page-node-id="GFBzHtdSfUtiBfaVV8Tp0D">
+      <div style="font-size: 32px; margin-bottom: 8px;" data-page-node-id="7aRTkrSOXFPsNZ8UFuO07c">📋</div>
+      <div style="font-size: 14px; color: #e6e9ef;" data-page-node-id="4uqOggMWlyTksaqLAOe6Df">点击选择文件 / 拖拽图片到此处 / <kbd style="background:#2d3548;padding:2px 6px;border-radius:3px;font-size:11px;" data-page-node-id="qzXNCOAksE20eLYWE1ttmu">Ctrl/⌘+V</kbd> 直接粘贴</div>
+      <div class="hint" data-page-node-id="PIzDd3FwsMaSLu3PiNsdZH">支持 PNG / JPG / WebP / SVG · 波形图、状态机、时序图等规则化图形</div>
+    </div>
+    <input type="file" id="file-input" accept="image/*" style="display:none" data-page-node-id="DUo5Q3JV4wB0G0mFA6ejZH">
+  </div>
+</div>
+
+<!-- 2. AI 配置 -->
+<div class="panel" data-page-node-id="bDTcTyVDfaGVEdI5pf6vb1">
+  <div class="panel-title" data-page-node-id="6zAsJfXrPqqlpdiB6qaR36">② AI 视觉识别</div>
+  <div class="row" data-page-node-id="MBJiciHv5OWTEKew3CWSuv">
+    <div data-page-node-id="ALiDnBGuHjzluwlb8V4KCL">
+      <label data-page-node-id="0GQIiyhdh0P5ehDFqHNVbC">模型服务</label>
+      <select id="model-select" data-page-node-id="oXRLigDPyNx3ARlRJYP4jh">
+        <optgroup label="国内 · 可直连（推荐）">
+          <option value="qwen">通义千问 qwen-vl-max ★</option>
+          <option value="qwen-flash">通义千问 qwen3-vl-flash（更便宜）</option>
+          <option value="zhipu">智谱 GLM-4.6V</option>
+          <option value="zhipu-flash">智谱 GLM-4.6V-Flash（有免费额度）</option>
+          <option value="siliconflow">硅基流动 SiliconFlow</option>
+          <option value="stepfun">阶跃星辰 Step</option>
+          <option value="doubao">火山方舟 · 豆包视觉</option>
+        </optgroup>
+        <optgroup label="海外">
+          <option value="openai">OpenAI GPT-4o vision</option>
+          <option value="anthropic">Anthropic Claude Sonnet 4.5</option>
+          <option value="gemini">Google Gemini 2.5 Pro</option>
+        </optgroup>
+        <optgroup label="其它">
+          <option value="custom">自定义（任何 OpenAI 兼容服务）</option>
+        </optgroup>
+      </select>
+    </div>
+    <div data-page-node-id="y58FLVS1oWRVHETRaRQZic">
+      <label data-page-node-id="9ncyGZbMn7AwJnLwiU3qzp">API Key</label>
+      <input type="password" id="api-key" placeholder="sk-..." data-page-node-id="9ncyGZbMn7AwJnLwiU3qzp">
+    </div>
+    <div data-page-node-id="Ui2T6TTmFBYiOPxuddLjVA">
+      <label data-page-node-id="7km549cDy9L3tDoLKC4wNJ">模型 ID（切换服务会自动填）</label>
+      <input type="text" id="model-id" placeholder="qwen-vl-max" data-page-node-id="NiAremSEKTiBwiBq0ZAXAD">
+    </div>
+  </div>
+  <div class="row" style="grid-template-columns: 1fr;" data-page-node-id="MBJiciHv5OWTEKew3CWSux">
+    <div data-page-node-id="Ui2T6TTmFBYiOPxuddLjVB">
+      <label data-page-node-id="7km549cDy9L3tDoLKC4wNK">API Base URL（切换服务会自动填）</label>
+      <input type="text" id="api-base" placeholder="https://dashscope.aliyuncs.com/compatible-mode/v1" data-page-node-id="NiAremSEKTiBwiBq0ZAXAE">
+    </div>
+  </div>
+  <div class="hint" id="provider-hint" style="margin-bottom:10px;"></div>
+  <div class="hint" data-page-node-id="ZxBx8LEGgvY9v5tnBHiL8X">
+    <span class="pill" data-page-node-id="vEipi4f2oMQpYNyQCHLemf">隐私</span>
+    所有调用在本地浏览器发起，API Key 只存在浏览器内存里，不上传任何服务器。
+    <span class="pill" data-page-node-id="ofou2o1uiJcBrzhPEcbCTf">国内直连</span>
+    通义 / 智谱 / 硅基流动 / 火山方舟 / 阶跃 都是 OpenAI 兼容接口，国内可直连。
+    <br>
+    <span class="pill">不想填 Key？</span>
+    直接在宿主 AI（WorkBuddy / Claude Code / Codex 等）对话里把图粘给它，走 skill 路径，零配置。
+  </div>
+</div>
+
+<!-- 3. 触发按钮 -->
+<div class="panel" data-page-node-id="nVJ4pCAsSDwAaH2K9kIJqN">
+  <div class="panel-title" data-page-node-id="ElKURqhrQAsCWPW7wlhqrG">③ 一键识别 + 修复</div>
+  <button id="btn-recognize" disabled data-page-node-id="HDcdzn5lila9KDAG4nesEh">🔍 AI 识别并生成 WaveJSON</button>
+  <button class="secondary" id="btn-bypass" onclick="location.href='viewer.html'" data-page-node-id="1v9HBo75pJ5egzU4PHznXq">→ 已经有 WaveJSON？直接用 viewer</button>
+  <div class="log" id="log" style="margin-top: 10px;" data-page-node-id="wJLzwxXMJ2R2wHBjfWGtsc"></div>
+</div>
+
+<!-- 4. 渲染 + 编辑 + 导出 -->
+<div class="panel" data-page-node-id="8YhcCxXin3mi4KugfcYDL7">
+  <div class="panel-title" data-page-node-id="iYFAXkJfjCI5nHIvC1Ejn6">④ 渲染结果 · 直角方波（可手动编辑 JSON）</div>
+  <div class="render" id="render-area" data-page-node-id="zLKXx1L2oojZcHJSyFKHEv">
+    <span class="empty" data-page-node-id="kFguHpZ8ykbnjhzrzb8Adl">先粘贴图片并识别</span>
+  </div>
+  <br data-page-node-id="RiXZaBIocJmuGycFQ7NB9E">
+  <textarea id="json-editor" placeholder="生成的 WaveJSON 在这里，你可以手动修改"></textarea>
+  <div class="row" data-page-node-id="2GXp2g7eGoVFml7TZLuGeV">
+    <div data-page-node-id="F8qznFnC9NTvBTdBCI5w4x">
+      <button onclick="render()" data-page-node-id="AXBkHeQtnsGCyFBWgDfSFR">重新渲染</button>
+      <button class="secondary" onclick="postProcessJson()" data-page-node-id="xmeISjuVN9vGDMGmguHgvK">⟲ 后处理（自动 fix 字段长度）</button>
+    </div>
+  </div>
+</div>
+
+<!-- 5. 导出 -->
+<div class="panel" data-page-node-id="ismhsovfY4EvAXdNW5CetZ">
+  <div class="panel-title" data-page-node-id="viVlVdjRHGQAAv4BTtM6nn">⑤ 导出</div>
+  <button class="secondary" onclick="downloadSvg()" data-page-node-id="a9KKGnFlunwcPdiv4EB6tD">下载 .svg</button>
+  <button class="secondary" onclick="downloadJson()" data-page-node-id="pFZJtMCbyQP6DFszxV9ZlS">下载 .json</button>
+  <button onclick="downloadForVisio()" data-page-node-id="194IMjZwCG9Soeg0FDNpsR">📥 下载 Visio 友好 SVG</button>
+  <button class="secondary" onclick="downloadPng()" data-page-node-id="OQRUz50iYBG0WVLlqWmaEh">下载 .png（位图）</button>
+  <div class="hint" style="margin-top: 10px;" data-page-node-id="6kdPLsoBiETBjNUuoa8em5">
+    💡 <b data-page-node-id="50melNUtCVznJERCGUatn5">Visio 导入说明</b>：输出的 SVG 是纯 path/text 矢量、白底黑线、直角电平跳变。Visio 2024+ 用 <b>File → Open</b> 直接打开即可；需要拆分信号线时选中图形按 <b>Ungroup</b>。
+  </div>
+</div>
+
+</div>
+
+<!-- 渲染器已内置（自研直角方波渲染器），不再依赖 WaveDrom CDN -->
+
+<script>
+/* ============================================================
+   State
+============================================================ */
+let currentImage = null;   // dataURL
+let currentJson = null;    // 当前 WaveJSON
+let currentSvg = null;     // 当前渲染出的 SVG 源码
+
+const $ = (id) => document.getElementById(id);
+
+/* ============================================================
+   模型服务表
+   国内这几家都提供 OpenAI 兼容接口，所以共用 callOpenAI()，只是 baseUrl / model 不同。
+   模型名会随厂商迭代变化，所以做成"预设 + 可手改"，选预设会自动填、也能自己覆盖。
+============================================================ */
+const PROVIDERS = {
+  qwen:          { base: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-vl-max',   api: 'openai',
+                   note: '阿里云 DashScope · 国内直连 · 图表/密集图形理解第一梯队，时序图首选' },
+  'qwen-flash':  { base: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen3-vl-flash', api: 'openai',
+                   note: '阿里云 DashScope · 比 qwen-vl-max 便宜不少，日常够用' },
+  zhipu:         { base: 'https://open.bigmodel.cn/api/paas/v4',              model: 'glm-4.6v',      api: 'openai',
+                   note: '智谱 · 中文图表能力强；模型名以控制台为准，可改成 glm-4v-plus 等' },
+  'zhipu-flash': { base: 'https://open.bigmodel.cn/api/paas/v4',              model: 'glm-4.6v-flash', api: 'openai',
+                   note: '智谱 · Flash 版有免费额度，适合先试质量' },
+  siliconflow:   { base: 'https://api.siliconflow.cn/v1',                     model: 'Qwen/Qwen2.5-VL-72B-Instruct', api: 'openai',
+                   note: '硅基流动 · 一个 Key 用多种开源 VL 模型，便宜；模型名可在控制台查' },
+  stepfun:       { base: 'https://api.stepfun.com/v1',                        model: 'step-1o-turbo-vision', api: 'openai',
+                   note: '阶跃星辰 · 图表理解好；模型名以控制台为准' },
+  doubao:        { base: 'https://ark.cn-beijing.volces.com/api/v3',          model: '',              api: 'openai',
+                   note: '火山方舟 · 模型 ID 要填你在方舟创建的「推理接入点 ID」（形如 ep-2024xxxx），不是模型名' },
+  openai:        { base: 'https://api.openai.com/v1',                         model: 'gpt-4o',        api: 'openai',
+                   note: '需要能访问 OpenAI 的网络' },
+  anthropic:     { base: 'https://api.anthropic.com',                         model: 'claude-sonnet-4-5-20250929', api: 'anthropic',
+                   note: '需要能访问 Anthropic 的网络' },
+  gemini:        { base: 'https://generativelanguage.googleapis.com/v1beta',  model: 'gemini-2.5-pro', api: 'gemini',
+                   note: '需要能访问 Google 的网络' },
+  custom:        { base: '', model: '', api: 'openai',
+                   note: '任何 OpenAI 兼容服务 —— 包括本地 vLLM / Ollama / LM Studio（base 填 http://localhost:11434/v1 之类）' },
+};
+
+function applyProvider() {
+  const p = PROVIDERS[$('model-select').value];
+  if (!p) return;
+  $('api-base').value = p.base;
+  $('model-id').value = p.model;
+  const hint = $('provider-hint');
+  hint.textContent = p.note;
+  hint.style.color = '#8a91a3';
+  hint.style.fontSize = '12.5px';
+}
+const dropzone = $('dropzone');
+const dzText = $('dropzone-text');
+const fileInput = $('file-input');
+const log = $('log');
+
+function logMsg(msg, isError = false) {
+  const ts = new Date().toLocaleTimeString();
+  log.textContent += `[${ts}] ${msg}\n`;
+  log.className = isError ? 'log error' : 'log';
+  log.scrollTop = log.scrollHeight;
+}
+function clearLog() { log.textContent = ''; }
+
+/* ============================================================
+   直角方波渲染器（替代 WaveDrom）
+
+   为什么不用官方 WaveDrom：
+     1) 它的电平过渡是斜边梯形，不是原厂时序图的直角方波；
+     2) 用 "0000" 这类显式重复字符时，WaveDrom 会在每个字符边界画一个小转折，
+        CS_n 这种全程恒定的低电平会变成一排尖刺；
+     3) 它的 2-9 字符会画成彩色数据块 —— 而那正是把数据线高低电平"吃掉"的元凶。
+
+   本渲染器只把字符当作"电平段"，相邻同电平自动合并、不画多余记号，
+   输出白底黑线的纯 path/text SVG，Visio 2024+ 可 File→Open 直接导入并 Ungroup 编辑。
+============================================================ */
+const RJS = {
+  CELL: 26, ROW: 62, LABEL_W: 112,
+  BG: '#ffffff', LINE: '#000000', LABEL: '#1f4e9c',
+  TITLE: '#111111', GRID: '#c9ccd1', BITLBL: '#6b7280',
+  FONT: 'Helvetica, Arial, sans-serif',
+  GRID_STEP: 2,      /* 竖虚线间隔（字符数）：2 = 每 1 个数据位一条 */
+  GRID_LABELS: true, /* 顶部 D7…D0 位标尺 */
+};
+
+/* wave 字符 -> 逐字符电平
+   0 低 / 1 高 / . = 沿用前值 / p 视作高 / x 未知（x_style="hatch" 时画 Don't Care 斜纹）
+   / z 高阻 / 2-9 数据块（色块颜色见 sig.colors）
+
+   可选扩展（不给就保持老行为，与 wavejson2svg.py 必须一致 —— 铁律 8）：
+     config.ruler_step   位标尺 / 竖虚线步长（字符数），默认 2 = 1 bit 2 字符；4 = 每时钟 4 字符
+     config.ruler_offset 标尺文字相对格起点的偏移，默认 ruler_step//2（居中）；0 = 压在格左边界
+     config.x_style      'tint'（默认淡灰底）| 'hatch'（斜纹 = 原厂图的 Don't Care）
+     config.x_line       false = 未定义态区间内不画电平线（Don't Care 只留斜纹带）；默认 true
+     config.grid_step    覆盖 RJS.GRID_STEP
+     sig.colors[]        与 sig.data 同序的色块填充色，用尽后循环；默认 #e8e4ff
+     sig.dash            true = 该行折线画虚线（未驱动的 DQS / 未反选的 CS）
+     sig.blank           true = 只占行高、不画任何东西（分组留白） */
+function decodeWave(wave) {
+  const out = [];
+  let prev = 0;
+  for (const ch of wave) {
+    let lv, kind = 'lv';
+    if (ch === '0') lv = 0;
+    else if (ch === '1') lv = 1;
+    else if (ch === '.' || ch === '=') lv = prev;
+    else if (ch === 'p') lv = 1;
+    else if (ch === 'x') { lv = null; kind = 'x'; }
+    else if (ch === 'z') { lv = 0.5; kind = 'z'; }
+    else if ('23456789'.includes(ch)) { lv = 1; kind = 'blk'; }
+    else lv = 0;
+    out.push({ lv, kind });
+    if (kind === 'lv' || kind === 'blk') prev = lv;
+  }
+  return out;
+}
+
+/* 在矩形内生成 45°「/」斜纹线段 -> [[x1,y1,x2,y2], ...]
+   为什么不用 <pattern>：Visio 对 SVG pattern 的导入不可靠（可能整块丢成纯色/空白），
+   而这份 SVG 的用途就是「进 Visio 继续编辑」，显式 line 几何 100% 可导入。
+   直线参数化 u = X + Y = c（图像坐标 y 向下，故 u=c 即「/」方向）。 */
+function hatchSegments(x, y, w, h, spacing) {
+  const sp = spacing || 7;
+  const x0 = x, y0 = y, x1 = x + w, y1 = y + h;
+  const segs = [];
+  for (let c = Math.floor((x0 + y0) / sp) * sp; c <= x1 + y1; c += sp) {
+    const pts = [];
+    [x0, x1].forEach(ex => { const ey = c - ex; if (ey >= y0 && ey <= y1) pts.push([ex, ey]); });
+    [y0, y1].forEach(ey => { const ex = c - ey; if (ex >= x0 && ex <= x1) pts.push([ex, ey]); });
+    const uniq = [];
+    pts.forEach(pt => {
+      if (!uniq.some(q => Math.abs(pt[0] - q[0]) < 1e-6 && Math.abs(pt[1] - q[1]) < 1e-6)) uniq.push(pt);
+    });
+    if (uniq.length >= 2) {
+      uniq.sort((a, b) => a[0] - b[0]);
+      segs.push([uniq[0][0], uniq[0][1], uniq[uniq.length - 1][0], uniq[uniq.length - 1][1]]);
+    }
+  }
+  return segs;
+}
+
+/* 生成折线点：默认仅在同电平之间插入垂直线段（直角方波）
+   edges（可选，向后兼容）：边沿斜坡表，描述「边沿不是垂直的」。
+     每项 = {at: 字符位(可小数), from: 0|1, to: 0|1, width: 斜坡宽度(字符数)}
+
+   ⚠️ edges 是权威的（与 wavejson2svg.py 必须一致，铁律 8）：
+     wave 只提供「哪段高、哪段低」；每个 edge 认领它区间内的**第一个**跳变点，
+     用斜坡代替那个垂直跳变；其余跳变照原样画垂直线。
+     理由：wave 字符串只能表达整数位电平，而正弦波边沿常落在非整数位置
+     （如「高平台占 1.5 字符」）。不这样处理就会多画出一竖。 */
+function waveToPolyline(levels, x0, cell, yLow, yHigh, edges) {
+  const yOf = lv => (lv === null ? (yLow + yHigh) / 2 : yLow - lv * (yLow - yHigh));
+
+  const es = [];
+  (edges || []).forEach(e => {
+    const at = parseFloat(e.at), w = parseFloat(e.width);
+    if (!isNaN(at) && !isNaN(w) && w > 0) es.push([at, w, e]);
+  });
+  es.sort((a, b) => a[0] - b[0]);
+
+  const jumps = [];
+  for (let i = 1; i < levels.length; i++) {
+    if (Math.abs(yOf(levels[i]) - yOf(levels[i - 1])) > 1e-9) jumps.push(i);
+  }
+
+  const edgeForJump = {};
+  const suppressed = new Set();
+  es.forEach(([at, w, e]) => {
+    for (const i of jumps) {
+      if (edgeForJump[i] || suppressed.has(i)) continue;
+      if (at - 1e-6 <= i && i <= at + w + 1e-6) {
+        edgeForJump[i] = [at, w, e];
+        /* 抑制斜坡前后各一个整数位的跳变 —— 斜坡本身已跨越那两段，
+           不抑制就会与斜坡重复画（与 wavejson2svg.py 必须一致，铁律 8） */
+        [i - 1, i + 1].forEach(j => { if (jumps.includes(j) && !edgeForJump[j]) suppressed.add(j); });
+        break;
+      }
+    }
+  });
+
+  const pts = [[x0, yOf(levels[0])]];
+  jumps.forEach(i => {
+    const x = x0 + i * cell;
+    const yp = yOf(levels[i - 1]), y = yOf(levels[i]);
+    if (edgeForJump[i]) {
+      const [at, w, e] = edgeForJump[i];
+      const from = (e.from === undefined || e.from === null) ? levels[i - 1] : e.from;
+      const to = (e.to === undefined || e.to === null) ? levels[i] : e.to;
+      pts.push([x0 + at * cell, yOf(from)]);
+      pts.push([x0 + (at + w) * cell, yOf(to)]);
+    } else if (suppressed.has(i)) {
+      /* 由斜坡覆盖，不画垂直线 */
+    } else {
+      pts.push([x, yp]); pts.push([x, y]);
+    }
+  });
+  pts.push([x0 + levels.length * cell, yOf(levels[levels.length - 1])]);
+  return pts;
+}
+
+/* 把逐字符状态切成若干「非 x」连续段 -> [[起 x, 电平数组], ...]
+   用于 config.x_line=false：Don't Care（斜纹）区间不落笔，画出来就是
+   「上下边界 + 一条斜纹带」，与 wavejson2svg.py 的 polyline_runs 一致（铁律 8）。 */
+function polylineRuns(chars, x0, cell) {
+  const segs = [];
+  let cur = null, curX = null;
+  chars.forEach((o, i) => {
+    if (o.kind === 'x') {
+      if (cur && cur.length) segs.push([curX, cur]);
+      cur = null; curX = null;
+    } else {
+      if (cur === null) { cur = []; curX = x0 + i * cell; }
+      cur.push(o.lv);
+    }
+  });
+  if (cur && cur.length) segs.push([curX, cur]);
+  return segs;
+}
+
+function escXml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+/* WaveJSON -> SVG 字符串 */
+function renderWaveJson(wj) {
+  const cell = RJS.CELL, rowH = RJS.ROW, labelW = RJS.LABEL_W;
+  const signals = wj.signal || [];
+  const head = ((wj.head || {}).text) || '';
+  const foot = ((wj.foot || {}).text) || '';
+  const cfg = wj.config || {};
+  const n = signals.reduce((m, s) => Math.max(m, (s.wave || '').length), 0);
+  const waveW = n * cell;
+
+  /* 位标尺 / 竖虚线步长（字符数）与标尺文字偏移 */
+  let rulerStep = parseInt(cfg.ruler_step, 10) || 2;
+  if (rulerStep < 1) rulerStep = 2;
+  const rulerOff = (cfg.ruler_offset === undefined || cfg.ruler_offset === null)
+    ? Math.floor(rulerStep / 2) : parseInt(cfg.ruler_offset, 10);
+  const xStyle = cfg.x_style || 'tint';
+  const gridStep = (cfg.grid_step !== undefined && cfg.grid_step !== null)
+    ? parseInt(cfg.grid_step, 10) : RJS.GRID_STEP;
+
+  /* 位标尺：优先用外部给的标签（PDF 的 T0..T9 或厂商图的 T0..T23），
+     否则只在长度符合「首尾各留 2 字符、1 bit = 2 字符」时推导 D7…D0 */
+  let bits = [];
+  if (cfg.ruler && RJS.GRID_LABELS) {
+    bits = cfg.ruler.map(String);
+  } else if (RJS.GRID_LABELS && n >= 4 && (n - 4) % 2 === 0) {
+    const nb = (n - 4) / 2;
+    for (let i = 0; i < nb; i++) bits.push('D' + (nb - 1 - i));
+  }
+
+  const headH = head ? 34 : 8, footH = foot ? 34 : 8;
+  const lblH = bits.length ? 20 : 0;
+  const bodyH = rowH * signals.length;
+  const top0 = headH + lblH;
+  const W = labelW + waveW + 24;
+  const H = top0 + bodyH + footH;
+  const x0 = labelW;
+  const p = [];
+
+  p.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`);
+  p.push(`<rect x="0" y="0" width="${W}" height="${H}" fill="${RJS.BG}"/>`);
+  if (head) {
+    p.push(`<text x="${(W / 2).toFixed(1)}" y="${(headH * 0.62).toFixed(1)}" text-anchor="middle" font-family="${RJS.FONT}" font-size="14" font-weight="bold" fill="${RJS.TITLE}">${escXml(head)}</text>`);
+  }
+
+  /* 1. 轨道分隔底色（先铺底，虚线压在它上面） */
+  signals.forEach((sig, si) => {
+    if (si % 2 === 1) {
+      const top = top0 + si * rowH;
+      p.push(`<rect x="0" y="${top.toFixed(1)}" width="${W}" height="${rowH}" fill="#000" fill-opacity="0.022"/>`);
+    }
+  });
+
+  /* 2. 贯穿全部信号的时钟对齐虚线（画在波形之前，不盖电平边沿）
+        一条线同时穿过所有信号，用于确认「第 k 个数据位 == 第 k 个 SCLK 周期」 */
+  if (gridStep && gridStep > 0) {
+    const gy1 = lblH ? (top0 - lblH + 5) : (top0 + 4);
+    const gy2 = top0 + bodyH - 4;
+    for (let i = gridStep; i < n; i += gridStep) {
+      const gx = x0 + i * cell;
+      p.push(`<line x1="${gx.toFixed(1)}" y1="${gy1.toFixed(1)}" x2="${gx.toFixed(1)}" y2="${gy2.toFixed(1)}" stroke="${RJS.GRID}" stroke-width="0.7" stroke-dasharray="3,3"/>`);
+    }
+  }
+
+  /* 3. 位标尺，按 ruler_step / ruler_offset 摆放 */
+  bits.forEach((lbl, k) => {
+    if (!String(lbl).trim()) return;
+    const cx = x0 + (rulerStep * k + rulerOff) * cell;
+    p.push(`<text x="${cx.toFixed(1)}" y="${(headH + lblH * 0.70).toFixed(1)}" text-anchor="middle" font-family="${RJS.FONT}" font-size="11.5" fill="${RJS.BITLBL}">${escXml(lbl)}</text>`);
+  });
+
+  /* 4. 每条信号 */
+  signals.forEach((sig, si) => {
+    if (sig.blank) return;
+    const top = top0 + si * rowH;
+    const pad = rowH * 0.17;
+    const yHigh = top + pad, yLow = top + rowH - 1 - pad;
+    const chars = decodeWave(sig.wave || '');
+
+    /* 未知态底色（tint 淡灰底 / hatch 斜纹 = Don't Care）
+       连续 x 合并成一个区域：hatch 模式给「边界 + 显式斜线」，
+       逐字符画会多出内部竖线，用 <pattern> 则 Visio 导入不可靠 */
+    const xFill = (xStyle === 'hatch') ? '#ffffff' : '#c9ccd1';
+    const xOp = (xStyle === 'hatch') ? '' : ' fill-opacity="0.30"';
+    const xStroke = (xStyle === 'hatch') ? ' stroke="#6b7280" stroke-width="1"' : '';
+    for (let i = 0; i < chars.length; i++) {
+      if (chars[i].kind !== 'x') continue;
+      let j = i;
+      while (j < chars.length && chars[j].kind === 'x') j++;
+      const rx = x0 + i * cell, rw = (j - i) * cell;
+      /* 顺序不能反：白底矩形先画、斜线画在上面
+         （第一版反了，白色填充把斜线盖掉，图上是空框） */
+      p.push(`<rect x="${rx.toFixed(1)}" y="${yHigh.toFixed(1)}" width="${rw.toFixed(1)}" height="${(yLow - yHigh).toFixed(1)}" fill="${xFill}"${xOp}${xStroke}/>`);
+      if (xStyle === 'hatch') {
+        p.push('<g stroke="#9aa0a6" stroke-width="0.9">');
+        hatchSegments(rx, yHigh, rw, yLow - yHigh).forEach(s => {
+          p.push(`<line x1="${s[0].toFixed(1)}" y1="${s[1].toFixed(1)}" x2="${s[2].toFixed(1)}" y2="${s[3].toFixed(1)}"/>`);
+        });
+        p.push('</g>');
+      }
+      i = j - 1;
+    }
+
+    const xLine = (cfg.x_line === undefined || cfg.x_line === null) ? true : !!cfg.x_line;
+    const runs = xLine ? [[x0, chars.map(o => o.lv)]] : polylineRuns(chars, x0, cell);
+    const dashAttr = sig.dash ? ' stroke-dasharray="5,3"' : '';
+    runs.forEach(([sx, lvs]) => {
+      /* 斜坡边沿（sig.edges）：x_line=false 时按段起点平移字符位 */
+      let segEdges = null;
+      if (sig.edges && sig.edges.length) {
+        if (sx === x0) {
+          segEdges = sig.edges;
+        } else {
+          const off = cell ? (sx - x0) / cell : 0;
+          segEdges = sig.edges.map(e => ({ at: parseFloat(e.at) - off, width: e.width }))
+            .filter(e => !isNaN(e.at));
+        }
+      }
+      const pts = waveToPolyline(lvs, sx, cell, yLow, yHigh, segEdges);
+      const d = 'M ' + pts.map(([a, b]) => `${a.toFixed(2)},${b.toFixed(2)}`).join(' L ');
+      p.push(`<path d="${d}" fill="none" stroke="${RJS.LINE}" stroke-width="1.6" stroke-linejoin="miter" stroke-linecap="butt"${dashAttr}/>`);
+    });
+
+    /* 数据块（2-9）：矩形 + 数值文字
+       · `2..` 里的 `.` / `=` 是**延续**，要把整块拉宽（不是每个字符一个小方块）
+       · 文字优先取 sig.data（WaveDrom 语义：按块出现顺序消费，用尽后循环），
+         没有 data 时退回显示块字符本身（兼容老行为）
+       · 填充色取 sig.colors（与 data 同序；不给则用默认淡紫） */
+    const wave = sig.wave || '';
+    const data = sig.data || [];
+    const colors = sig.colors || [];
+    let blkIdx = 0, bi = 0;
+    while (bi < wave.length) {
+      if (!'23456789'.includes(wave[bi])) { bi++; continue; }
+      let bj = bi + 1;
+      while (bj < wave.length && (wave[bj] === '.' || wave[bj] === '=')) bj++;
+      const bx = x0 + bi * cell, bh = yLow - yHigh, bw = (bj - bi) * cell;
+      const fill = colors.length ? colors[blkIdx % colors.length] : '#e8e4ff';
+      p.push(`<rect x="${bx.toFixed(1)}" y="${yHigh.toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" fill="${fill}" stroke="${RJS.LINE}" stroke-width="1"/>`);
+      const label = data.length ? data[blkIdx % data.length] : wave[bi];
+      // 字号自适应：既要装得下 cell*0.55 的字高，也要装得下这段文字的总宽。
+        // 系数 1.85 = 1/0.54（Helvetica 平均字宽 ≈ 0.54×字号），留一点安全边。
+        // 与 wavejson2svg.py 必须保持一致（铁律 8）。
+        const fs = Math.min(11, cell * 0.55, bw / Math.max(1, String(label).length) * 1.85);
+      if (String(label)) {
+        p.push(`<text x="${(bx + bw / 2).toFixed(1)}" y="${(yHigh + bh * 0.68).toFixed(1)}" text-anchor="middle" font-family="${RJS.FONT}" font-size="${fs.toFixed(1)}" fill="#222">${escXml(label)}</text>`);
+      }
+      blkIdx++;
+      bi = bj;
+    }
+
+    if (String(sig.name || '').trim()) {
+      p.push(`<text x="${labelW - 10}" y="${((yHigh + yLow) / 2 + 4).toFixed(1)}" text-anchor="end" font-family="${RJS.FONT}" font-size="14" font-weight="bold" fill="${RJS.LABEL}">${escXml(sig.name || '')}</text>`);
+    }
+
+    /* 延时标注（sig.delays）：画在信号行上方的空隙
+       横线 + 两端箭头 + 居中文字。格式 {from, to, label, dy}，from/to 为字符位。
+       原厂图用它标注「RL = 10」这类读延时。与 wavejson2svg.py 必须一致（铁律 8）。 */
+    (sig.delays || []).forEach(d => {
+      const fa = parseFloat(d.from), ta = parseFloat(d.to);
+      if (isNaN(fa) || isNaN(ta) || ta <= fa) return;
+      const dx = x0 + fa * cell, tx = x0 + ta * cell;
+      const dy = parseFloat(d.dy) || 0;
+      const ay = yHigh - 9 - dy;
+      p.push(`<line x1="${dx.toFixed(1)}" y1="${ay.toFixed(1)}" x2="${tx.toFixed(1)}" y2="${ay.toFixed(1)}" stroke="#111" stroke-width="1"/>`);
+      [[dx, 1], [tx, -1]].forEach(([ax, sgn]) => {
+        p.push(`<path d="M ${ax.toFixed(1)},${ay.toFixed(1)} L ${(ax + sgn * 8).toFixed(1)},${(ay - 3.6).toFixed(1)} L ${(ax + sgn * 8).toFixed(1)},${(ay + 3.6).toFixed(1)} Z" fill="#111"/>`);
+      });
+      const lbl = String(d.label || '');
+      if (lbl) {
+        p.push(`<text x="${((dx + tx) / 2).toFixed(1)}" y="${(ay - 4).toFixed(1)}" text-anchor="middle" font-family="${RJS.FONT}" font-size="12.5" fill="#111">${escXml(lbl)}</text>`);
+      }
+    });
+  });
+
+  if (foot) {
+    p.push(`<text x="${(labelW + waveW / 2).toFixed(1)}" y="${(H - footH * 0.36).toFixed(1)}" text-anchor="middle" font-family="${RJS.FONT}" font-size="12.5" fill="${RJS.TITLE}">${escXml(foot)}</text>`);
+  }
+  p.push('</svg>');
+  return p.join('\n');
+}
+
+
+/* ============================================================
+   Image Input (paste / drop / file)
+============================================================ */
+dropzone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', e => loadFile(e.target.files[0]));
+
+['dragenter', 'dragover'].forEach(evt =>
+  dropzone.addEventListener(evt, e => {
+    e.preventDefault();
+    dropzone.classList.add('dragover');
+  })
+);
+['dragleave', 'drop'].forEach(evt =>
+  dropzone.addEventListener(evt, e => {
+    e.preventDefault();
+    dropzone.classList.remove('dragover');
+  })
+);
+dropzone.addEventListener('drop', e => {
+  e.preventDefault();
+  loadFile(e.dataTransfer.files[0]);
+});
+
+document.addEventListener('paste', e => {
+  const items = e.clipboardData.items;
+  for (const item of items) {
+    if (item.type.startsWith('image/')) {
+      const blob = item.getAsFile();
+      loadFile(blob);
+      break;
+    }
+  }
+});
+
+function loadFile(file) {
+  if (!file || !file.type.startsWith('image/')) {
+    logMsg('请提供图片文件', true); return;
+  }
+  logMsg(`加载图片: ${file.name} (${(file.size/1024).toFixed(1)} KB)`);
+  const reader = new FileReader();
+  reader.onload = e => {
+    currentImage = e.target.result;
+    dropzone.classList.add('has-image');
+    dzText.innerHTML = `<img src="${currentImage}">`;
+    $('btn-recognize').disabled = false;
+    logMsg('✓ 图片就绪，可以识别');
+  };
+  reader.readAsDataURL(file);
+}
+
+/* ============================================================
+   AI Vision Recognize
+============================================================ */
+$('btn-recognize').addEventListener('click', async () => {
+  if (!currentImage) { logMsg('没有图片', true); return; }
+
+  const providerKey = $('model-select').value;
+  const provider = PROVIDERS[providerKey] || PROVIDERS.custom;
+  const apiKey = $('api-key').value.trim();
+  const apiBase = $('api-base').value.trim() || provider.base;
+  const modelId = $('model-id').value.trim() || provider.model;
+
+  if (!apiKey) { logMsg('请填 API Key', true); return; }
+  if (!modelId) { logMsg('请填模型 ID' + (providerKey === 'doubao' ? '（火山方舟的推理接入点 ID，形如 ep-xxxx）' : ''), true); return; }
+  if (!apiBase) { logMsg('请填 API Base URL', true); return; }
+
+  clearLog();
+  logMsg(`调用 ${modelId} @ ${apiBase}`);
+
+  const prompt = buildPrompt();
+  try {
+    let rawText;
+    if (provider.api === 'anthropic') {
+      rawText = await callAnthropic(apiBase, apiKey, prompt, currentImage, modelId);
+    } else if (provider.api === 'gemini') {
+      rawText = await callGemini(apiBase, apiKey, prompt, currentImage, modelId);
+    } else {
+      rawText = await callOpenAI(apiBase, apiKey, prompt, currentImage, modelId);
+    }
+
+    logMsg('✓ AI 返回内容');
+
+    // 提取 JSON
+    const json = extractJson(rawText);
+    if (!json) { logMsg('AI 输出不含有效 JSON', true); return; }
+
+    logMsg('✓ JSON 解析成功');
+    setJson(json);
+    logMsg('✓ 后处理完成');
+    render();
+    logMsg('✓ 渲染完成');
+  } catch (err) {
+    logMsg('错误：' + err.message, true);
+  }
+});
+
+function buildPrompt() {
+  return "你是芯片工程师时序图识别专家。请把图中的波形转成 WaveJSON。\n\n【最重要的规则 —— 违反会导致图形完全错误】\n1. 数据线（MOSI / MISO / DQ / DIN / DOUT 这类单 bit 信号）必须用 '0' 和 '1'\n   表达真实的高/低电平，一个 bit 用 2 个相同字符表示（1 个 SCLK 周期 = 2 字符）。\n   例：数据位 0101 -> \"00110011\"；数据位 1100 -> \"11110000\"\n   ❌ 绝对禁止用 2-9 数字字符表示数据线 —— 那会被渲染成彩色数据块，\n      而不是高低电平波形（这正是\"数据线被吃掉\"的原因）。\n   （2-9 只用于真正的并行总线，例如 D[7:0] 在一个周期内传送一个字节值。）\n\n2. 时钟信号（SCLK / CLK / CK）用 '0' 和 '1' 交替表达标准方波，空闲电平按 CPOL：\n   CPOL=0（Mode 0/1）空闲低 -> 每个时钟周期写 \"01\"\n   CPOL=1（Mode 2/3）空闲高 -> 每个时钟周期写 \"10\"\n\n3. 片选 / 复位 / 使能等控制线直接用 0/1，不要用 2-9。\n\n4. signal 数组里所有 \"wave\" 字段必须严格等长（硬约束），短的在末尾补 '.'。\n\n5. 波形两端各留 2 个字符的空闲电平（写实为 0 或 1；不要用 '.' 或 'x' 开头，\n   否则会渲染成未定义态的阴影）。\n\n6. 仅输出 JSON，不要 markdown 代码块、不要解释。\n7. 复杂图加 \"head\"/\"foot\" 说明标题、协议与数据值。\n8. 信号顺序按图中从上到下排列。\n\n【正确示例：SPI Mode 0 全双工，MOSI=0x5A(0101_1010)、MISO=0xC3(1100_0011)\n  每 bit 2 字符，首尾各留 2 字符边距 => 全部 20 字符】\n{\"head\":{\"text\":\"SPI Mode 0 Full-Duplex · MOSI=0x5A · MISO=0xC3 · CPOL=0 CPHA=0\"},\"signal\":[{\"name\":\"CS_n\",\"wave\":\"11000000000000000011\"},{\"name\":\"SCLK\",\"wave\":\"00010101010101010100\"},{\"name\":\"MOSI\",\"wave\":\"00001100111100110000\"},{\"name\":\"MISO\",\"wave\":\"00111100000000111100\"}],\"config\":{\"hscale\":1},\"foot\":{\"text\":\"MOSI: 0101_1010 = 0x5A · MISO: 1100_0011 = 0xC3 · MSB First\"}}\n\n现在请分析这张图，按上述规则输出 WaveJSON:";
+}
+
+function extractJson(text) {
+  // 先尝试直接 parse
+  try { return JSON.parse(text.trim()); } catch {}
+
+  // 尝试提取 markdown 内的 JSON
+  const match = text.match(/```(?:json)?\s*([\s\S]+?)```/);
+  if (match) {
+    try { return JSON.parse(match[1].trim()); } catch {}
+  }
+
+  // 尝试找首个 { 到末尾 }
+  const start = text.indexOf('{');
+  const end = text.lastIndexOf('}');
+  if (start !== -1 && end !== -1) {
+    try { return JSON.parse(text.substring(start, end + 1)); } catch {}
+  }
+  return null;
+}
+
+/* ============================================================
+   LLM API Calls
+============================================================ */
+async function callOpenAI(baseUrl, key, prompt, dataUrl, model = 'gpt-4o') {
+  const resp = await fetch(`${baseUrl}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${key}`
+    },
+    body: JSON.stringify({
+      model: model,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'text', text: prompt },
+          { type: 'image_url', image_url: { url: dataUrl } }
+        ]
+      }],
+      temperature: 0.1
+    })
+  });
+  const data = await resp.json();
+  if (data.error) throw new Error(data.error.message);
+  return data.choices[0].message.content;
+}
+
+async function callAnthropic(baseUrl, key, prompt, dataUrl, model = 'claude-sonnet-4-5-20250929') {
+  const mediaType = dataUrl.match(/data:(image\/\w+);base64,/)[1];
+  const b64 = dataUrl.split(',')[1];
+  const resp = await fetch(`${baseUrl}/v1/messages`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: model,
+      max_tokens: 2048,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: mediaType, data: b64 } },
+          { type: 'text', text: prompt }
+        ]
+      }]
+    })
+  });
+  const data = await resp.json();
+  if (data.error) throw new Error(data.error.message);
+  return data.content[0].text;
+}
+
+async function callGemini(baseUrl, key, prompt, dataUrl, model = 'gemini-2.5-pro') {
+  const mediaType = dataUrl.match(/data:(image\/\w+);base64,/)[1];
+  const b64 = dataUrl.split(',')[1];
+  const resp = await fetch(`${baseUrl}/models/${model}:generateContent?key=${key}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{
+        parts: [
+          { text: prompt },
+          { inline_data: { mime_type: mediaType, data: b64 } }
+        ]
+      }]
+    })
+  });
+  const data = await resp.json();
+  if (data.error) throw new Error(data.error.message);
+  return data.candidates[0].content.parts[0].text;
+}
+
+/* ============================================================
+   Post-process: fix wave field length alignment
+============================================================ */
+function postProcessJson() {
+  const editor = $('json-editor');
+  let json;
+  try { json = JSON.parse(editor.value); }
+  catch (e) { logMsg('JSON 解析失败：' + e.message, true); return; }
+
+  const signals = json.signal || [];
+  if (signals.length === 0) { logMsg('没有 signal 字段', true); return; }
+
+  // 1) 把 2-9 数据块字符降级为真实 0/1 电平（数据线被"吃掉"的兜底修复）
+  let converted = 0;
+  signals.forEach(s => {
+    if (!s.wave || !/[2-9]/.test(s.wave)) return;
+    const dataArr = Array.isArray(s.data) ? s.data : null;
+    let di = 0;
+    s.wave = s.wave.replace(/[2-9]/g, ch => {
+      let lv;
+      if (dataArr && di < dataArr.length) {
+        const bits = String(dataArr[di]).match(/[01]/g);
+        lv = bits ? bits[bits.length - 1] : ((parseInt(ch, 10) % 2) ? '1' : '0');
+      } else {
+        lv = (parseInt(ch, 10) % 2) ? '1' : '0';   // 2/4/6/8 -> 0, 3/5/7/9 -> 1
+      }
+      di++;
+      return lv;
+    });
+    converted++;
+  });
+
+  // 2) 补齐所有 wave 到最长长度
+  let maxLen = 0;
+  signals.forEach(s => { if (s.wave) maxLen = Math.max(maxLen, s.wave.length); });
+  signals.forEach(s => {
+    if (!s.wave) return;
+    while (s.wave.length < maxLen) s.wave += '.';
+  });
+
+  setJson(json);
+  logMsg(`已对齐所有 wave 到 ${maxLen} 字符`);
+  if (converted) {
+    logMsg(`✓ 已把 ${converted} 条信号上的 2-9 数据块还原为真实高低电平`);
+  }
+}
+
+function setJson(json) {
+  currentJson = json;
+  $('json-editor').value = JSON.stringify(json, null, 2);
+}
+
+/* ============================================================
+   Render
+============================================================ */
+function render() {
+  const editor = $('json-editor');
+  let json;
+  try { json = JSON.parse(editor.value); }
+  catch (e) { logMsg('JSON 解析失败：' + e.message, true); return; }
+
+  currentJson = json;
+  const target = $('render-area');
+  try {
+    const svg = renderWaveJson(json);
+    currentSvg = svg;
+    target.innerHTML = svg;
+    logMsg(`✓ 已渲染（直角方波 · ${(json.signal || []).length} 个信号）`);
+  } catch (e) {
+    logMsg('渲染失败：' + e.message, true);
+  }
+}
+
+/* ============================================================
+   Export: SVG / JSON / PNG / Visio
+============================================================ */
+function downloadSvg() {
+  if (!currentJson) { alert('没有 JSON'); return; }
+  const svg = renderWaveJson(currentJson);
+  download(svg, 'waveform.svg', 'image/svg+xml');
+  logMsg('✓ SVG 已下载（直角方波，可直接拖入 Visio）');
+}
+
+function downloadJson() {
+  if (!currentJson) { alert('没有 JSON'); return; }
+  download(currentJson, 'waveform.json', 'application/json');
+}
+
+function downloadPng() {
+  // 用 canvas 渲染 SVG 转 PNG
+  const svgEl = document.querySelector('#render-area svg');
+  if (!svgEl) { alert('请先渲染'); return; }
+  const xml = new XMLSerializer().serializeToString(svgEl);
+  const img = new Image();
+  const blob = new Blob([xml], { type: 'image/svg+xml' });
+  const url = URL.createObjectURL(blob);
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = svgEl.viewBox.baseVal.width || img.width;
+    canvas.height = svgEl.viewBox.baseVal.height || img.height;
+    canvas.getContext('2d').drawImage(img, 0, 0);
+    canvas.toBlob(blob => {
+      download(blob, 'waveform.png');
+      URL.revokeObjectURL(url);
+    });
+  };
+  img.src = url;
+}
+
+function downloadForVisio() {
+  if (!currentJson) { alert('没有 JSON'); return; }
+  const svg = renderWaveJson(currentJson);
+  download(svg, 'waveform-for-visio.svg', 'image/svg+xml');
+  logMsg('✓ 已下载 — Visio 2024+ 用 File → Open 打开该 SVG；要拆成可编辑形状就 Ungroup');
+}
+
+function download(content, filename, type) {
+  const blob = content instanceof Blob ? content : new Blob([content], { type: type || 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+/* ============================================================
+   Init
+============================================================ */
+$('model-select').addEventListener('change', applyProvider);
+applyProvider();
+
+$('json-editor').value = '';
+logMsg('工具就绪。粘贴或拖拽图片开始。');
+
+</script>
+</body>
+</html>

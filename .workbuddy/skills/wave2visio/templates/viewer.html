@@ -1,0 +1,143 @@
+<!-- 模板文件 — 不要直接使用。改完请运行： python3 scripts/build_web.py -->
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="nZUareN8D4JpM8KsSe40u3">
+<head data-page-node-id="98APmQG7Jti2L6VmWIOkrX">
+<meta charset="UTF-8" data-page-node-id="hipkaT6ymCnRCdwNqA95Hd">
+<title>@@TITLE@@</title>
+<style>
+  body {
+    margin: 0;
+    padding: 24px;
+    background: #0f1419;
+    color: #e6e9ef;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  }
+  .container { max-width: 1100px; margin: 0 auto; }
+  h1 { font-size: 22px; margin-bottom: 6px; color: #d4a574; }
+  .sub { color: #8a91a3; font-size: 13px; margin-bottom: 24px; }
+  .panel {
+    background: #1a1f29;
+    border: 1px solid #2d3548;
+    border-radius: 6px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .panel-title {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: #d4a574;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  textarea {
+    width: 100%;
+    min-height: 240px;
+    background: #0f1419;
+    border: 1px solid #2d3548;
+    color: #e6e9ef;
+    border-radius: 4px;
+    padding: 12px;
+    font-family: "SF Mono", Menlo, monospace;
+    font-size: 13px;
+    resize: vertical;
+    box-sizing: border-box;
+  }
+  button {
+    background: #d4a574;
+    color: #0f1419;
+    border: 0;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-right: 8px;
+  }
+  button:hover { background: #c9a86a; }
+  .render {
+    background: #ffffff;
+    border: 1px solid #2d3548;
+    border-radius: 4px;
+    padding: 20px;
+    min-height: 240px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-x: auto;
+  }
+  .controls { margin: 12px 0; }
+</style>
+</head>
+<body data-page-node-id="waPocyL8ZTi7aCZwTniU2m">
+<div class="container" data-page-node-id="tH68hIuAh5IjcSq48zJOtL">
+
+<h1 data-page-node-id="IuAGkSPtP6RHglva2ixRPr">@@H1@@</h1>
+<div class="sub" data-page-node-id="y4cml592p6X6HtiLGMKBD7">@@SUB@@</div>
+
+<div class="panel" data-page-node-id="TJFRWCer0gtmi2Ch3tyg7U">
+  <div class="panel-title" data-page-node-id="FQFFX2KEZIO6H57jtxRJgC">WaveJSON INPUT</div>
+  <textarea id="json-input" placeholder='{ "signal": [...], "config": { "hscale": 2 } }'></textarea>
+  <div class="controls" data-page-node-id="oDQrgHdojNV8jiS02PoP9d">
+    <button onclick="render()" data-page-node-id="IorGsZ7ggTDj8qQyca0R5I">渲染</button>
+    <button onclick="downloadJson()" data-page-node-id="VvyvTFVl5VMOoqBX7Gbm96">下载 .json</button>
+    <button onclick="downloadSvg()" data-page-node-id="qsion1Ckg2QMXyAIErMrXr">下载 .svg</button>
+    <button onclick="loadSample()" data-page-node-id="nLbV2a9t6YBGXo74Z7uYjH">载入样例</button>
+  </div>
+</div>
+
+<div class="panel" data-page-node-id="pFzjLm1M9r1DsVYq03AcG3">
+  <div class="panel-title" data-page-node-id="AOk1u1vYKWMp5B0D1Zi205">RENDERED DIAGRAM</div>
+  <div class="render" id="diagram" data-page-node-id="XOSRH4klhtXQxxMdQpzqnD">
+    <span style="color:#8a91a3" data-page-node-id="QVgmAMAk2QCG2teAjM0A5Q">点击「渲染」或「载入样例」开始</span>
+  </div>
+</div>
+
+</div>
+
+<script>
+@@RENDERER_JS@@
+
+@@SAMPLE_COMMENT@@
+const SAMPLE_SPI = @@SAMPLE_JSON@@;
+
+function render() {
+  const input = document.getElementById('json-input').value.trim();
+  if (!input) { alert('请输入 WaveJSON'); return; }
+  let parsed;
+  try { parsed = JSON.parse(input); }
+  catch (e) { alert('JSON 解析错误：' + e.message); return; }
+
+  const target = document.getElementById('diagram');
+  try {
+    target.innerHTML = renderWaveJson(parsed);
+    currentSvg = target.innerHTML;
+  } catch (e) { alert('渲染错误：' + e.message); }
+}
+
+function loadSample() {
+  document.getElementById('json-input').value = JSON.stringify(SAMPLE_SPI, null, 2);
+  render();
+}
+
+function downloadJson() {
+  const input = document.getElementById('json-input').value;
+  if (!input) { alert('没有内容'); return; }
+  const blob = new Blob([input], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'waveform.json';
+  a.click();
+}
+
+let currentSvg = null;
+
+function downloadSvg() {
+  if (!currentSvg) { alert('请先渲染'); return; }
+  const blob = new Blob([currentSvg], { type: 'image/svg+xml' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'waveform.svg';
+  a.click();
+}
+</script>
+</body>
+</html>
