@@ -959,17 +959,23 @@ def main():
     # 全部写成断言，改动后跑一遍就知道有没有漂移。
     #
     # ⚠️ 基线真值全部来自实测（2026-10-22，修复 ROW_HALF 后），不是估计值。
-    # ⚠️ 路径探测要试多个候选：技能装在 ~/.workbuddy/skills/ 时，
-    #    ROOT 上溯 3 层到的是 ~/.workbuddy 而不是项目根 → 相对路径永远找不到 figs。
-    FIGS_ALL = None
-    for _cand in (
-        "/Users/maxwork/WorkBuddy/2026-09-14-11-10-22/test-cases/real-datasheets/figs",
-        os.path.abspath(os.path.join(ROOT, "..", "..", "..",
-                                     "test-cases", "real-datasheets", "figs")),
-    ):
-        if os.path.isdir(_cand):
-            FIGS_ALL = _cand
-            break
+    # ⚠️ 路径探测（2026-11-10 改）：仓库已公开，**绝不写本机绝对路径**。
+    #    从 ROOT 逐级上溯找 test-cases/.../figs，另认 CWD 与环境变量
+    #    WAVE2VISIO_PROJECT_ROOT（语料在别的机器/别的位置时用它指路）。
+    #    找不到就跳过本组（跳过项不能报 ✓）。
+    _fig_cands = []
+    _env_root = os.environ.get("WAVE2VISIO_PROJECT_ROOT")
+    if _env_root:
+        _fig_cands.append(os.path.join(_env_root, "test-cases",
+                                       "real-datasheets", "figs"))
+    _up = ROOT
+    for _ in range(6):
+        _fig_cands.append(os.path.join(_up, "test-cases",
+                                       "real-datasheets", "figs"))
+        _up = os.path.dirname(_up)
+    _fig_cands.append(os.path.join(os.getcwd(), "test-cases",
+                                   "real-datasheets", "figs"))
+    FIGS_ALL = next((c for c in _fig_cands if os.path.isdir(c)), None)
     if FIGS_ALL and os.path.isdir(FIGS_ALL):
         if not a.quiet:
             print("\n[9.7] 真实厂商图全量基线（7 张· 回归用）")

@@ -24,10 +24,10 @@
 ```text
 【任务交接】芯片设计「AI 画图 → Visio」小工具
 
-请先读这两个文件（如果路径不可达，我再贴内容给你）：
-- 需求规格：/Users/maxwork/WorkBuddy/2026-09-14-11-10-22/docs/chip-tool-requirements.md
-- 项目记忆：/Users/maxwork/WorkBuddy/2026-09-14-11-10-22/.workbuddy/memory/MEMORY.md
-- 实现资产：/Users/maxwork/WorkBuddy/2026-09-14-11-10-22/.workbuddy/skills/wave2visio/
+请先读下面几个文件（路径均相对仓库根目录）：
+- 需求规格：`docs/chip-tool-requirements.md`
+- 项目记忆：`.workbuddy/memory/MEMORY.md`
+- 实现资产：`.workbuddy/skills/wave2visio/`（开发源；分发包在 `dist/wave2visio-skill/`）
 
 【背景】
 给芯片设计工程师做一个小而专的工具：用自然语言 / 鼠标点选 / 截图输入，
