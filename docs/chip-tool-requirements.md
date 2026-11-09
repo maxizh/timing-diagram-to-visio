@@ -6,7 +6,7 @@
 | 归档日期 | 2026-09-15 |
 | 需求来源 | 2026-09-14 与「坤」的完整会话（工作目录 `2026-09-14-11-10-22`） |
 | 当前状态 | **P0（waveform 全链路）已跑通并通过等效性验证**；P1 / P2 待做 |
-| 核心资产 | `.workbuddy/skills/wavejson/` |
+| 核心资产 | `.workbuddy/skills/wave2visio/` |
 
 ---
 
@@ -41,7 +41,7 @@
 | R8 | 输出 **Visio 格式** | 「最后要格式化成 Visio 格式」 | ✅ 已实现 |
 | R9 | 质疑手绘→标准框图为何难 | 「为什么手绘 to 标准框图这个功能这么困难？」 | ✅ 已解释（见 §6.4） |
 | R10 | 先只做 waveform | 「那如果只是 waveform 呢？」 | ✅ 已完成 |
-| R11 | 生成 SPI Mode 0 传输 0xA5 波形 | 「用 wavejson skill 给我画一个 SPI mode 0 传输 0xA5 的波形」 | ✅ 已完成 |
+| R11 | 生成 SPI Mode 0 传输 0xA5 波形 | 「用 wave2visio skill 给我画一个 SPI mode 0 传输 0xA5 的波形」 | ✅ 已完成 |
 | R12 | 转 Visio | 「我想把这个图转换成 Visio 格式」 | ✅ 已完成 |
 | R13 | **独立功能：Verdi 截图 → Visio** | 「我把 verdi 里的 waveform 截图粘贴到我的这个 APP 里，它直接就能转换成 visio 格式」 | ✅ 已实现 |
 | R14 | **附加功能：规则化图片 → Visio** | 「我把规则化程度极高的"图片"粘贴到我的这个 APP 里，它直接就能转换成 visio 格式」 | ✅ 已实现（R13 是其特例） |
@@ -231,7 +231,7 @@ WaveDrom 里 `2`…`9` 渲染成**彩色数据槽方块**，跟高低电平毫�
 ### 8.3 构建流程（单一真相源）
 
 ```bash
-cd .workbuddy/skills/wavejson
+cd .workbuddy/skills/wave2visio
 python3 scripts/build_web.py           # 生成 assets/ 下三个 HTML
 python3 scripts/build_web.py --check   # 校验产物与源是否一致（不一致 exit 1）
 ```

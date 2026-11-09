@@ -304,7 +304,7 @@ def render_html(rows, wj, got):
     return f"""<!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>WaveJSON 技能验收报告</title>
+<title>wave2visio 技能验收报告</title>
 <style>
 :root{{--fg:#1a1a1a;--muted:#6b6b6b;--line:#e2e2e2;--bg:#fff;--soft:#fafafa;
 --ok:#1f7a45;--no:#b3261e;--accent:#1f4e9c}}
@@ -361,7 +361,7 @@ footer{{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);
 color:var(--muted);font-size:12.5px}}
 </style></head><body><div class="wrap">
 
-<h1>WaveJSON 技能验收报告
+<h1>wave2visio 技能验收报告
 <span class="badge {"ok" if passed == total else "no"}">{passed}/{total} 通过</span></h1>
 <p class="meta">{time.strftime("%Y-%m-%d %H:%M")} · 由 <code>scripts/selftest.py --html</code> 自动生成 ·
 全程离线、无 API 调用</p>
@@ -1381,7 +1381,7 @@ def main():
     # wave2visio → skills → .workbuddy → <项目>
     proj_root = os.path.dirname(os.path.dirname(os.path.dirname(ROOT)))
     # ⚠️ 路径三段都要跟着改名走（2026-11-02 修）：
-    #   原来是 dist/wavejson-skill/wavejson —— 技能改名 wavejson→wave2visio 时
+    #   改名前的旧路径是 dist/<旧包名>/<旧技能名> —— 技能改名时
     #   这里**漏改了**，导致 [12] 组一直在检一个不存在的路径 → 守护形同虚设
     #   （自检会打印「跳过」而不是失败，正好符合「跳过项不能报 ✓」的反面教材）。
     dist_root = os.path.join(proj_root, "dist", "wave2visio-skill", "wave2visio")
@@ -1418,6 +1418,65 @@ def main():
                 r.check("分发包 skill_dir.sh 可执行且定位到安装目录",
                         p.returncode == 0 and p.stdout.strip(),
                         (p.stdout + p.stderr).strip())
+
+    # ---- 13. 旧技能名残留（整个项目树） ----------------------------------
+    # 背景（2026-11-02 实测）：技能改名（旧名 → 当前名）后，dist 包修好了，
+    # 但**项目里 dist 之外**的地方没人管 —— test-cases 里 4 个脚本还在
+    # import 旧技能目录下的 scripts/（目录已改名 → 直接 ImportError）、
+    # docs/ 与分发 README 里还写着旧的 @skill 触发命令（复制即扑空）。
+    # 这些都不在 dist 包内，[12] 组看不见。所以单独扫一遍项目树。
+    #
+    # ⚠️ 只查「技能名」，不查「格式名」：WaveJSON 是中间数据格式（WaveDrom 官方
+    #    输入格式），`wavejson2svg.py` 这类名字名副其实，**不要**去改它们。
+    #    孤立小写 token 只在 .md 里判（代码里拿格式名当变量名是合法的）。
+    if not a.quiet:
+        print("\n[13] 旧技能名残留（项目树：脚本路径 / 触发命令 / 目录名 / 包名）")
+    SKILL = os.path.basename(ROOT.rstrip(os.sep))
+    OLD = ["wavejson"]                       # 历史用过的技能名
+    PATS = [                                 # (正则模板, 仅 .md 文件适用)
+        (r"@skill:{O}\b", False),
+        (r"(?<![\w.])/{O}\b", False),        # 斜杠命令 /<旧名>
+        (r"\${O}\b", False),                 # Codex 触发名 $<旧名>
+        (r"skills/{O}\b(?!2)", False),
+        (r"(?<![\w/]){O}/(?![a-z])", False),  # 目录名 <旧名>/
+        (r"(?<![\w-]){O}[ _-]skill", False),  # 署名 / 包名
+        # 孤立小写 token：只在 .md 里判（代码里拿格式名当变量名是合法的）
+        (r"(?<![\w/.\-]){O}(?!2svg|[\w.\-])", True),
+    ]
+    olds = [o for o in OLD if o != SKILL]
+    rules = [(re.compile(tpl.replace("{O}", o)), md_only)
+             for o in olds for tpl, md_only in PATS]
+    if not os.path.isdir(os.path.join(proj_root, ".workbuddy", "skills", SKILL)):
+        if not a.quiet:
+            print("· 跳过（当前不在项目开发树中，本组不适用）")
+    else:
+        skip_parts = {".git", "node_modules", "__pycache__", "memory", "dist"}
+        bad_names = []
+        for dirpath, dirnames, filenames in os.walk(proj_root):
+            dirnames[:] = [d for d in dirnames if d not in skip_parts]
+            for fn in filenames:
+                if not fn.endswith((".md", ".py", ".sh", ".html", ".js", ".json")):
+                    continue
+                fp = os.path.join(dirpath, fn)
+                if ".bak-" in fp or ".removed-" in fp:
+                    continue
+                # 本文件不自我豁免：注释里一律不写旧名，写到 `<旧名>` / {O} 占位符。
+                # 守卫有豁免就会漏，宁可麻烦自己。
+                try:
+                    with open(fp, encoding="utf-8") as f:
+                        lines = f.read().splitlines()
+                except Exception:
+                    continue
+                for i, line in enumerate(lines, 1):
+                    for rx, md_only in rules:
+                        if md_only and not fn.endswith(".md"):
+                            continue
+                        if rx.search(line):
+                            bad_names.append(f"{os.path.relpath(fp, proj_root)}:{i}"
+                                             f" {line.strip()[:70]}")
+                            break
+        r.check(f"项目树内无旧技能名残留（当前名 {SKILL}）", not bad_names,
+                "; ".join(bad_names[:3]) if bad_names else "")
 
     # ---- 汇总 -------------------------------------------------------------
     total, failed = len(r.rows), r.fail_count()

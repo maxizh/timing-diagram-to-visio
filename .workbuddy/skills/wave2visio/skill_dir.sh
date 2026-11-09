@@ -29,5 +29,5 @@ done
 
 echo "ERROR: 未找到技能 '$NAME' 的安装目录，查过这三处：" >&2
 printf '  - %s\n' "${CANDIDATES[@]}" >&2
-echo "装一下：bash install.sh  或参照 README 手动复制 wavejson/ 目录。" >&2
+echo "装一下：bash install.sh  或参照 README 手动复制 wave2visio/ 目录。" >&2
 exit 1

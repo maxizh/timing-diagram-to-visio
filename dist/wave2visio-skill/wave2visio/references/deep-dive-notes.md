@@ -48,9 +48,9 @@ Codex CLI 等）均可加载。全部脚本纯 Python 3 标准库（仅 selftest
 
 | 宿主 | 自然语言触发 | 显式触发 |
 |---|---|---|
-| WorkBuddy | 直接说需求，自动命中 | `@skill:wavejson` |
-| Claude Code | 自动匹配 description | `/wavejson` |
-| Codex CLI | 自动匹配 description | `$wavejson` |
+| WorkBuddy | 直接说需求，自动命中 | `@skill:wave2visio` |
+| Claude Code | 自动匹配 description | `/wave2visio` |
+| Codex CLI | 自动匹配 description | `$wave2visio` |
 
 路径分岔：
 
@@ -243,7 +243,7 @@ python3 scripts/wavejson2svg.py input.json -o out.svg --cell 26 --row 62
 
 ## 一句话调用示例
 
-> "用 wavejson skill 给我画个 SPI mode 0 传输 0xA5 的波形"
+> "用 wave2visio skill 给我画个 SPI mode 0 传输 0xA5 的波形"
 
 → 宿主 AI 直接输出 WaveJSON + 自动生成可预览的 HTML viewer。
 

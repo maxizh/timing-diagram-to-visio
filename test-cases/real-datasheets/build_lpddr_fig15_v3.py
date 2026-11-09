@@ -250,7 +250,7 @@ def main():
 
     here = HERE
     for _ in range(4):
-        cand = here / ".workbuddy" / "skills" / "wavejson" / "scripts"
+        cand = here / ".workbuddy" / "skills" / "wave2visio" / "scripts"
         if (cand / "wavejson2svg.py").is_file():
             sys.path.insert(0, str(cand))
             break

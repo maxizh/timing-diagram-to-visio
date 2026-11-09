@@ -37,7 +37,7 @@ import re
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SKILL = os.path.join(HERE, "..", "..", ".workbuddy", "skills", "wavejson")
+SKILL = os.path.join(HERE, "..", "..", ".workbuddy", "skills", "wave2visio")
 sys.path.insert(0, os.path.abspath(os.path.join(SKILL, "scripts")))
 
 import wavejson2svg as W  # noqa: E402

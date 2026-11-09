@@ -8,7 +8,7 @@ description_zh: "自然语言或波形图截图/datasheet PDF → WaveJSON → �
 description_en: "Natural language or timing-diagram screenshot/PDF to WaveJSON to Visio-editable SVG"
 ---
 
-# WaveJSON — 时序波形图 ⇄ Visio
+# wave2visio — 时序波形图 ⇄ Visio
 
 把「写一段时序说明 / 把 datasheet 里的图变成可编辑的」这件事，从手工画图变成一句话。
 
@@ -26,7 +26,7 @@ description_en: "Natural language or timing-diagram screenshot/PDF to WaveJSON t
 
 **技能名为什么叫 wave2visio**：触发词是用户唯一要敲的东西，必须自解释。
 `wave2visio` = 波形 → Visio，一眼看出干什么；技能栏显示名是「芯片时序图 / Timing Diagram」。
-（原来叫 `wavejson` 是把**格式名**当成了技能名，用户敲 `@skill:wavejson` 会一脸茫然。）
+（早期曾把**格式名**当成技能名，用户看到会一脸茫然 —— 技能名 ≠ 格式名，这是改名的原因。）
 
 **本项目用的是 WaveJSON 的方言**：标准字段（`signal[]` / `wave` / `name` / `data` /
 `head` / `foot` / `config.hscale`）**加上 10 个扩展字段**
@@ -94,7 +94,7 @@ spec 文档配图；设计评审；把厂商 datasheet 的现成图变成可编�
 
 **默认示例（未指定用途时用这个）**：
 
-> 用 wavejson 给我画个 SPI mode 0 传输 0xA5 的波形
+> 用 wave2visio 给我画个 SPI mode 0 传输 0xA5 的波形
 
 → 输出 WaveJSON + 渲染成直角方波 SVG。Visio 2024+ `File → Open` 打开即可编辑，需要时 `Ungroup` 拆成形状、`Save As .vsdx`。
 
@@ -102,7 +102,7 @@ spec 文档配图；设计评审；把厂商 datasheet 的现成图变成可编�
 
 ```bash
 # 自动探测本机安装目录（同一份技能可装到 .workbuddy / .claude / .codex 任一）
-SKILL="$(bash "$(dirname "$0")/skill_dir.sh")" 2>/dev/null || SKILL=~/.workbuddy/skills/wavejson
+SKILL="$(bash "$(dirname "$0")/skill_dir.sh")" 2>/dev/null || SKILL=~/.workbuddy/skills/wave2visio
 
 # 渲染：WaveJSON → Visio 友好 SVG
 python3 $SKILL/scripts/wavejson2svg.py input.json -o out.svg --cell 26 --row 62

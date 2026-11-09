@@ -145,7 +145,7 @@ code{{background:#f5f5f5;border:1px solid #e5e5e5;border-radius:4px;padding:1px 
 
 <div class=warn>
 <b>版权提醒：</b>这些图是 ADI / TI / ISSI 的 datasheet 原图，著作权归各厂商。用于内部工程测试没问题，
-但<b>不要打进 skill 的 zip 分发</b>。所以它们放在 <code>test-cases/</code> 下，不在 <code>.workbuddy/skills/wavejson/assets/</code> 里。
+但<b>不要打进 skill 的 zip 分发</b>。所以它们放在 <code>test-cases/</code> 下，不在 <code>.workbuddy/skills/wave2visio/assets/</code> 里。
 </div>
 
 <h2>四、文件清单</h2>

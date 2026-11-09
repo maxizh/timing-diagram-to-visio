@@ -6,9 +6,9 @@
 
 | 宿主 | 安装路径 | 触发方式 |
 |---|---|---|
-| WorkBuddy | `~/.workbuddy/skills/wave2visio/` | 自然语言自动命中，或 `@skill:wavejson` |
-| Claude Code | `~/.claude/skills/wave2visio/` | 自动匹配，或 `/wavejson` |
-| Codex CLI | `~/.codex/skills/wave2visio/` | 自动匹配，或 `$wavejson` |
+| WorkBuddy | `~/.workbuddy/skills/wave2visio/` | 自然语言自动命中，或 `@skill:wave2visio` |
+| Claude Code | `~/.claude/skills/wave2visio/` | 自动匹配，或 `/wave2visio` |
+| Codex CLI | `~/.codex/skills/wave2visio/` | 自动匹配，或 `$wave2visio` |
 
 > **关于技能名 `wave2visio`**：触发词是用户唯一要敲的东西，必须自解释 —— wave2visio = 波形 → Visio。
 > 三宿主触发方式：`@skill:wave2visio`（WorkBuddy）/ `/wave2visio`（Claude Code）/ `$wave2visio`（Codex CLI）。
@@ -19,7 +19,7 @@
 > `foot` / `config.hscale`）+ 扩展字段（`ruler_step` / `colors` / `x_style` / `edges` /
 > `delays` 等，服务于复刻厂商图，标准 WaveDrom 会忽略）。
 > ⚠️ 渲染器是**自研**的，不用官方 WaveDrom 引擎（官方是斜边梯形、堆重复字符会多转折、
-> `2`-`9` 彩块会吃掉数据线电平）—— 详见 `wavejson/references/deep-dive-notes.md`。
+> `2`-`9` 彩块会吃掉数据线电平）—— 详见 `wave2visio/references/deep-dive-notes.md`。
 
 ## 能力概览
 
@@ -56,12 +56,12 @@ npx skills add <owner>/wave2visio-skill/wave2visio --agent claude   # 或 --agen
 
 ### 方式三：手动复制
 
-把 `wavejson/` 目录整个复制到上表任一路径（`SKILL.md` 必须直接位于 `wavejson/SKILL.md`，不要多套一层目录）。
+把 `wave2visio/` 目录整个复制到上表任一路径（`SKILL.md` 必须直接位于 `wave2visio/SKILL.md`，不要多套一层目录）。
 
 ## 验证安装
 
 ```bash
-cd ~/.claude/skills/wavejson    # 或对应宿主的路径
+cd ~/.claude/skills/wave2visio    # 或对应宿主的路径
 python3 scripts/selftest.py     # 退出码 0 = 通过；缺 pymupdf / 厂商语料的组会打印跳过
 ```
 
@@ -74,7 +74,7 @@ python3 scripts/selftest.py     # 退出码 0 = 通过；缺 pymupdf / 厂商语
 ## 目录结构
 
 ```
-wavejson/
+wave2visio/
 ├── SKILL.md              # 技能入口（最小可用版，只含调用方式 + 三条铁律）
 ├── scripts/              # 渲染器、PDF/PNG 解析器、自检、构建脚本
 ├── references/           # full-guide / examples / vision-prompt / deep-dive-notes

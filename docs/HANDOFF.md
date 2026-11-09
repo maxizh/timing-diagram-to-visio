@@ -27,7 +27,7 @@
 请先读这两个文件（如果路径不可达，我再贴内容给你）：
 - 需求规格：/Users/maxwork/WorkBuddy/2026-09-14-11-10-22/docs/chip-tool-requirements.md
 - 项目记忆：/Users/maxwork/WorkBuddy/2026-09-14-11-10-22/.workbuddy/memory/MEMORY.md
-- 实现资产：/Users/maxwork/WorkBuddy/2026-09-14-11-10-22/.workbuddy/skills/wavejson/
+- 实现资产：/Users/maxwork/WorkBuddy/2026-09-14-11-10-22/.workbuddy/skills/wave2visio/
 
 【背景】
 给芯片设计工程师做一个小而专的工具：用自然语言 / 鼠标点选 / 截图输入，

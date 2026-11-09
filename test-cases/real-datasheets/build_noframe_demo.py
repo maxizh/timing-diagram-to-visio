@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
-sys.path.insert(0, os.path.join(ROOT, ".workbuddy", "skills", "wavejson", "scripts"))
+sys.path.insert(0, os.path.join(ROOT, ".workbuddy", "skills", "wave2visio", "scripts"))
 import auto_trace as at  # noqa: E402
 
 FIGS = os.path.join(HERE, "figs")
@@ -355,7 +355,7 @@ python3 scripts/selftest.py</pre>
 <div class="foot">
 测试图源：ISSI IS42S 系列 SDRAM 数据手册、Analog Devices AD7606 数据手册（Fig 2 / Fig 4）、
 TI ADS8482 数据手册（Fig 33）。图仅用于本机算法验证，未随技能分发。<br>
-生成时间 2026-09-17 · wavejson skill · auto_trace.py frameless 模式
+生成时间 2026-09-17 · wave2visio skill · auto_trace.py frameless 模式
 </div>
 
 </div></body></html>"""

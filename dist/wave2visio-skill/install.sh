@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# wavejson skill installer — Agent Skills open standard
+# wave2visio skill installer — Agent Skills open standard
 # Works with: WorkBuddy / Claude Code / Codex CLI
 #
 # Local (from this repo / extracted zip):
@@ -30,7 +30,7 @@ ALL_TARGETS=(
 
 usage() {
   cat <<EOF
-wavejson skill installer (v${VERSION})
+wave2visio skill installer (v${VERSION})
 
 Usage:
   bash install.sh [target ...]        install (default: all targets)

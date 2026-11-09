@@ -19,7 +19,7 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
-SCRIPTS = os.path.join(ROOT, ".workbuddy", "skills", "wavejson", "scripts")
+SCRIPTS = os.path.join(ROOT, ".workbuddy", "skills", "wave2visio", "scripts")
 sys.path.insert(0, SCRIPTS)
 
 import pymupdf                                            # noqa: E402
@@ -126,7 +126,7 @@ def main():
         svg_zoom=1.0))
 
     html = f"""<!doctype html><html lang="zh"><meta charset="utf-8">
-<title>pdf_trace.py 对照验收 · wavejson skill</title>
+<title>pdf_trace.py 对照验收 · wave2visio skill</title>
 <style>
   :root {{ --bg:#0f1115; --fg:#e6e8ee; --dim:#9aa3b2; --line:#2a2f3a; --acc:#7cc4ff; --ok:#5fd39a; }}
   * {{ box-sizing:border-box; }}
@@ -162,7 +162,7 @@ def main():
   电平高低来自 <b>PNG 像素几何</b>。全程 <b>零大模型、零 OCR、零 API Key</b>。
 </p>
 {''.join(blocks)}
-<footer>wavejson skill · scripts/pdf_trace.py · 本页为单文件自包含（图片全部 base64 内嵌），可直接转发<br>
+<footer>wave2visio skill · scripts/pdf_trace.py · 本页为单文件自包含（图片全部 base64 内嵌），可直接转发<br>
 厂商图源不入技能库（本页在 test-cases/ 下，不进分发 zip）</footer>
 </html>"""
 

@@ -38,9 +38,83 @@ DIST = ROOT / "dist" / PKG_NAME
 IGNORE = shutil.ignore_patterns(".DS_Store", "__pycache__", "*.bak-*", "*.removed-*",
                                  "*.pyc", "memory")
 
+# 历史用过的技能名（改名后旧名会散落在各处，这里统一追杀）。
+# ⚠️ WaveJSON 是**中间数据格式**名，不是技能名 —— 不要加到这张表里，
+#    也不要去改 `wavejson2svg.py` 这类「格式→产物」的脚本名（它名副其实）。
+OLD_NAMES = ["wavejson"]
+
+# 旧技能名的残留形态（按特异性从高到低，逐个吃掉）。
+# 每条 = (正则, 替换模板, 说明, 仅 .md 文件适用)。{N} 会替换成当前技能名。
+# 最后一条**只在 .md 里判**：代码里拿「格式名」当变量名是合法的
+# （如 verdi-to-visio.html 里的 `const wavejson = ...` 指的是 WaveJSON 数据）。
+NAME_FIXES = [
+    (r"@skill:{O}\b", "@skill:{N}", "@skill 触发名", False),
+    (r"(?<![\w.])/{O}\b", "/{N}", "斜杠命令", False),
+    (r"\${O}\b", "${N}", "Codex 触发名", False),
+    (r"skills/{O}\b", "skills/{N}", "技能目录路径", False),
+    (r"(?<![\w/]){O}/(?![a-z])", "{N}/", "技能目录名", False),
+    (r"(?<![\w-]){O}[ _-]skill", "{N} skill", "技能署名", False),
+    (r"(?<![\w-]){O}-skill\b", "{N}-skill", "分发包名", False),
+    (r"(?<![\w/.\-]){O}(?!2svg|[\w.\-])", "{N}", "孤立旧技能名", True),
+]
+SCAN_EXTS = {".md", ".py", ".sh", ".html", ".js", ".json", ".svg", ".txt"}
+
 
 def log(msg):
     print(f"  {msg}")
+
+
+def _name_rules():
+    """把 NAME_FIXES 里的 {O}/{N} 展开成「按历史名逐个」的 (正则, 替换, 说明, md_only)。"""
+    rules = []
+    for old in OLD_NAMES:
+        if old == SKILL_NAME:
+            continue
+        for pat, rep, why, md_only in NAME_FIXES:
+            p = pat.replace("{O}", old).replace("{N}", SKILL_NAME)
+            r = rep.replace("{O}", old).replace("{N}", SKILL_NAME)
+            rules.append((re.compile(p), r, why, md_only))
+    return rules
+
+
+def name_fix_file(path: pathlib.Path):
+    """把单个文件里的旧技能名全部改成当前技能名。返回 [说明, ...]。"""
+    if path.suffix.lower() not in SCAN_EXTS:
+        return []
+    s = path.read_text(encoding="utf-8")
+    hits = []
+    for rx, rep, why, md_only in _name_rules():
+        if md_only and path.suffix.lower() != ".md":
+            continue
+        if rx.search(s):
+            hits.append(why)
+            s = rx.sub(rep, s)
+    if hits:
+        path.write_text(s, encoding="utf-8")
+    return hits
+
+
+def scan_stale_names(root: pathlib.Path):
+    """扫整个目录树，返回 [(相对路径, 行号, 说明, 行内容), ...]。空 = 干净。"""
+    out = []
+    rules = _name_rules()
+    for p in sorted(root.rglob("*")):
+        if not p.is_file() or p.suffix.lower() not in SCAN_EXTS:
+            continue
+        if any(x in str(p) for x in (".DS_Store", "__pycache__", ".bak-", ".removed-")):
+            continue
+        try:
+            lines = p.read_text(encoding="utf-8").splitlines()
+        except Exception:
+            continue
+        for i, line in enumerate(lines, 1):
+            for rx, _rep, why, md_only in rules:
+                if md_only and p.suffix.lower() != ".md":
+                    continue
+                if rx.search(line):
+                    out.append((str(p.relative_to(root)), i, why, line.strip()))
+                    break
+    return out
 
 
 def copy_tree(src: pathlib.Path, dst: pathlib.Path):
@@ -68,21 +142,27 @@ def build(check_only=False):
         copy_tree(SRC, target)
         log(f"✓ 镜像技能本体 → {target.relative_to(ROOT)}")
 
-    # ---- 2. install.sh 的 SKILL_NAME 必须跟源目录名一致 ----
-    inst = DIST / "install.sh"
-    if inst.is_file():
-        s = inst.read_text(encoding="utf-8")
-        m = re.search(r'SKILL_NAME="([^"]+)"', s)
-        if m and m.group(1) != SKILL_NAME:
-            if check_only:
-                print(f"ERROR: install.sh 的 SKILL_NAME={m.group(1)} ≠ {SKILL_NAME}",
-                      file=sys.stderr)
-                return 1
-            s = re.sub(r'SKILL_NAME="[^"]+"', f'SKILL_NAME="{SKILL_NAME}"', s)
-            # install.sh 里凡是提到分发包名的地方都要跟着改（curl 示例 URL、clone 示例）
-            s = re.sub(r'\b(wavejson|wave2visio)-skill\b', PKG_NAME, s)
-            inst.write_text(s, encoding="utf-8")
-            log(f"✓ install.sh 的 SKILL_NAME → {SKILL_NAME}")
+    # ---- 2. 分发包里的「旧技能名」自动改成当前技能名 ----
+    # 为什么要这一步（2026-11-02 血的教训）：改名时 install.sh / README 是手写文件，
+    # 不在技能本体镜像范围内 —— 只修了本体，文档里的触发命令、目录名、包名全是旧名，
+    # 用户照着文档敲旧触发名直接扑空。**文档也必须跟着改名。**
+    for name in ("install.sh", "README.md"):
+        f = DIST / name
+        if not f.is_file():
+            continue
+        hits = name_fix_file(f) if not check_only else []
+        if hits:
+            log(f"✓ {name} 旧技能名 → {SKILL_NAME}（{'/'.join(sorted(set(hits)))}）")
+
+    # ---- 2b. 命名守卫：分发包里不许再有任何旧技能名 ----
+    stale = scan_stale_names(DIST)
+    if stale:
+        print(f"ERROR: 分发包残留旧技能名（{len(stale)} 处，应为 {SKILL_NAME}）：",
+              file=sys.stderr)
+        for r, i, why, line in stale[:10]:
+            print(f"    {r}:{i}  [{why}]  {line[:90]}", file=sys.stderr)
+        return 1
+    log(f"✓ 命名守卫通过（0 处旧技能名残留）")
 
     # ---- 3. 逐字节一致性校验 ----
     src_files = sorted(p.relative_to(SRC) for p in SRC.rglob("*")

@@ -202,9 +202,9 @@ def main():
     wj = build()
     OUT_JSON.write_text(json.dumps(wj, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"✓ WaveJSON → {OUT_JSON}")
-    sys.path.insert(0, str(HERE.parent.parent / ".workbuddy" / "skills" / "wavejson" / "scripts"))
-    for cand in (HERE.parent.parent / ".workbuddy" / "skills" / "wavejson" / "scripts",
-                 HERE.parent.parent.parent / ".workbuddy" / "skills" / "wavejson" / "scripts"):
+    sys.path.insert(0, str(HERE.parent.parent / ".workbuddy" / "skills" / "wave2visio" / "scripts"))
+    for cand in (HERE.parent.parent / ".workbuddy" / "skills" / "wave2visio" / "scripts",
+                 HERE.parent.parent.parent / ".workbuddy" / "skills" / "wave2visio" / "scripts"):
         if (cand / "wavejson2svg.py").is_file():
             sys.path.insert(0, str(cand))
             break
