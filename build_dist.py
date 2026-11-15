@@ -38,6 +38,18 @@ DIST = ROOT / "dist" / PKG_NAME
 IGNORE = shutil.ignore_patterns(".DS_Store", "__pycache__", "*.bak-*", "*.removed-*",
                                  "*.pyc", "memory")
 
+# ---- WorkBuddy 技能商店包（open.workbuddy.cn/docs/skill）----
+# 平台解析器要求：解压后第一层**必须是技能目录本身**（wave2visio/SKILL.md），
+# zip ≤ 3MB，且不能带 __MACOSX / .DS_Store（Mac 用 ditto 打包会踩这个坑）。
+# ⚠️ 本地分发的两个 zip 都不满足：技能 zip 的顶层是 SKILL.md（少一层目录），
+#    整仓 zip 的顶层混了 README.md / install.sh。所以商店包必须单独生成。
+STORE_ZIP = ROOT / "dist" / f"{SKILL_NAME}-store.zip"
+STORE_LIMIT = 3 * 1024 * 1024
+# 官方文档标注「必填」的 8 个 frontmatter 字段
+STORE_REQUIRED = ("name", "display_name", "display_name_en", "description",
+                  "description_zh", "description_en", "version", "author")
+STORE_JUNK = (".DS_Store", "__pycache__", ".bak-", ".removed-", ".pyc", "__MACOSX")
+
 # 历史用过的技能名（改名后旧名会散落在各处，这里统一追杀）。
 # ⚠️ WaveJSON 是**中间数据格式**名，不是技能名 —— 不要加到这张表里，
 #    也不要去改 `wavejson2svg.py` 这类「格式→产物」的脚本名（它名副其实）。
@@ -122,6 +134,87 @@ def copy_tree(src: pathlib.Path, dst: pathlib.Path):
     if dst.exists():
         shutil.rmtree(dst)
     shutil.copytree(src, dst, ignore=IGNORE)
+
+
+def check_store_frontmatter(path: pathlib.Path):
+    """校验 SKILL.md frontmatter 是否满足技能商店要求。返回 [错误, ...]。"""
+    lines = path.read_text(encoding="utf-8").splitlines()
+    if not lines or lines[0].strip() != "---":
+        return ["SKILL.md 缺 frontmatter 起始 ---"]
+    end = next((i for i in range(1, len(lines)) if lines[i].strip() == "---"), None)
+    if end is None:
+        return ["SKILL.md frontmatter 缺结束 ---"]
+    fm = lines[1:end]
+    keys, errs = set(), []
+    for ln in fm:
+        m = re.match(r"^([A-Za-z_][A-Za-z0-9_-]*):\s*(.*)$", ln)
+        if not m:
+            continue
+        key, val = m.group(1), m.group(2).strip()
+        keys.add(key)
+        # YAML 冒号炸弹：未加引号的标量里出现「: 」会被当成 mapping，平台解析直接失败
+        if val and not val.startswith(('"', "'", "[", "{")) and ": " in val:
+            errs.append(f"{key} 值含裸冒号，YAML 会解析失败: {val[:60]}")
+    for k in STORE_REQUIRED:
+        if k not in keys:
+            errs.append(f"缺必填字段 {k}")
+    m = re.search(r"^name:\s*(\S+)", "\n".join(fm), re.M)
+    if m and m.group(1).strip("\"'") != SKILL_NAME:
+        errs.append(f"name={m.group(1)} 与安装目录名 {SKILL_NAME} 不一致")
+    return errs
+
+
+def verify_store_zip(zp: pathlib.Path):
+    """校验商店 zip 的结构。返回 [错误, ...]，空 = 合规。"""
+    errs = []
+    if zp.stat().st_size > STORE_LIMIT:
+        errs.append(f"体积 {zp.stat().st_size} bytes 超过 3MB 上限")
+    with zipfile.ZipFile(zp) as z:
+        names = z.namelist()
+    junk = [n for n in names if any(x in n for x in STORE_JUNK)]
+    if junk:
+        errs.append(f"含平台会拒收的元数据文件: {junk[:3]}")
+    tops = sorted({n.split("/")[0] for n in names if n})
+    if tops != [SKILL_NAME]:
+        errs.append(f"解压第一层须为单一目录 {SKILL_NAME}/，实际: {tops}")
+    if f"{SKILL_NAME}/SKILL.md" not in names:
+        errs.append(f"缺 {SKILL_NAME}/SKILL.md")
+    return errs
+
+
+def build_store_zip(check_only=False):
+    """生成商店专用 zip 并校验；--check 时只校验已有的包。"""
+    errs = check_store_frontmatter(SRC / "SKILL.md")
+    if errs:
+        print("ERROR: SKILL.md 不满足技能商店要求：", file=sys.stderr)
+        for e in errs:
+            print(f"    {e}", file=sys.stderr)
+        return 1
+    log("✓ 商店 frontmatter 校验通过（8 个必填字段 + name 对齐 + 无裸冒号）")
+
+    if not check_only:
+        STORE_ZIP.parent.mkdir(parents=True, exist_ok=True)
+        if STORE_ZIP.exists():
+            STORE_ZIP.unlink()
+        with zipfile.ZipFile(STORE_ZIP, "w", zipfile.ZIP_DEFLATED) as z:
+            for f in sorted(SRC.rglob("*")):
+                if not f.is_file() or any(x in str(f) for x in STORE_JUNK):
+                    continue
+                z.write(f, f"{SKILL_NAME}/{f.relative_to(SRC).as_posix()}")
+        log(f"✓ 打包 {STORE_ZIP.relative_to(ROOT)}  ({STORE_ZIP.stat().st_size} bytes)")
+
+    if not STORE_ZIP.is_file():
+        # 跳过项不报 ✓（干净 clone 尚未生成过商店包）
+        print(f"  跳过商店包结构校验：{STORE_ZIP.relative_to(ROOT)} 不存在，请先跑 build_dist.py")
+        return 0
+    zerrs = verify_store_zip(STORE_ZIP)
+    if zerrs:
+        print("ERROR: 商店包结构不合规：", file=sys.stderr)
+        for e in zerrs:
+            print(f"    {e}", file=sys.stderr)
+        return 1
+    log("✓ 商店包结构校验通过（顶层单目录 / SKILL.md / ≤3MB / 无元数据垃圾）")
+    return 0
 
 
 def build(check_only=False):
@@ -219,6 +312,11 @@ def build(check_only=False):
                                                (".DS_Store", "__pycache__", ".bak-", ".removed-")):
                         z.write(f, f.relative_to(only))
         log(f"✓ 打包 {zp.relative_to(ROOT)}  ({zp.stat().st_size} bytes)")
+
+    # ---- 4b. 技能商店包（结构要求与本地分发不同，必须单独生成）----
+    rc = build_store_zip(check_only)
+    if rc:
+        return rc
 
     print("✓ 分发包重建完成")
     return 0
